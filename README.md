@@ -23,6 +23,9 @@
 | <img src="docs/img/aba-processos.png" width="400"> | **Processos**: os 7 programas que mais pesam, como no Gerenciador de Tarefas. Toque no cabeçalho para ordenar. |
 | <img src="docs/img/jarvis.gif" width="400"> | **Jarvis**: assistente de voz em português. Com a aba aberta, bata **5 palmas** ou toque em Falar: ele abre apps, controla música e volume, tira print, diz o que está pesando no PC e responde perguntas usando o Claude Code. |
 
+**Com o PC desligado**, o tablet continua de guarda: bata 5 palmas e ele pergunta, com a voz do Jarvis, se deve
+[ligar o computador](docs/pc-desligado.md) (Wake-on-LAN).
+
 E também: tela cheia de verdade (cobre a barra do Android), inicia sozinho com o tablet e com o Windows, pede
 **Permitir/Negar** no tablet antes de ações sensíveis, e pausa a escuta do Jarvis quando um jogo está em tela cheia.
 
@@ -66,6 +69,7 @@ Para remover: `.\install_pc.ps1 -Uninstall` no PC e `adb uninstall br.local.pain
 | | |
 |---|---|
 | [Jarvis](docs/jarvis.md) | o que dá para pedir, opções, consumo e arquivos |
+| [Ligar o PC com palmas](docs/pc-desligado.md) | o tablet liga o PC desligado pela rede |
 | [Personalizar](docs/personalizar.md) | botões do Painel e integração com o Claude Code |
 | [Tablet antigo](docs/tablet-antigo.md) | deixar o aparelho leve e compilar o app Android |
 | [Arquitetura](docs/arquitetura.md) | como tudo se conecta, estrutura de pastas e modo demonstração |

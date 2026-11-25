@@ -27,6 +27,7 @@ public class MainActivity extends Activity implements Link.Listener {
     private FrameLayout root;
     private volatile boolean covered;
     private Link link;
+    private Vigia vigia;
     private SharedPreferences prefs;
     private final Handler ui = new Handler(Looper.getMainLooper());
     private volatile boolean pumpQueued;
@@ -79,6 +80,13 @@ public class MainActivity extends Activity implements Link.Listener {
         link = Link.get(prefs);
         link.setListener(this);
         link.start();
+        // PC desligado: o tablet escuta as palmas e liga o PC pela rede (Vigia.java)
+        vigia = new Vigia(this, prefs, new Vigia.Events() {
+            public void onGuard(String json) { link.local(json); }
+        });
+        vigia.setLink(link.isConnected());
+        link.setVigia(vigia);
+        vigia.start();
         dimBars();
     }
 
@@ -97,6 +105,10 @@ public class MainActivity extends Activity implements Link.Listener {
         if (i.hasExtra("token")) { e.putString("token", i.getStringExtra("token")); rebind = true; }
         if (i.hasExtra("autostart")) e.putBoolean("autostart", i.getBooleanExtra("autostart", true));
         if (i.hasExtra("cover")) e.putBoolean("cover", i.getBooleanExtra("cover", true));
+        if (i.hasExtra("claps")) e.putBoolean("claps", i.getBooleanExtra("claps", true));  // escuta com o PC desligado
+        if (i.hasExtra("guard_test")) e.putBoolean("guard_test", i.getBooleanExtra("guard_test", false));
+        if (i.hasExtra("clap_level")) e.putFloat("clap_level", i.getFloatExtra("clap_level", -36));
+        if (i.hasExtra("clap_rise")) e.putFloat("clap_rise", i.getFloatExtra("clap_rise", 25));
         e.commit();
         if (i.hasExtra("cover") && root != null) applyCover(i.getBooleanExtra("cover", true));
         if (rebind && link != null) link.rebind();
@@ -212,6 +224,7 @@ public class MainActivity extends Activity implements Link.Listener {
         @JavascriptInterface public boolean connected() { return link.isConnected(); }
         @JavascriptInterface public String mode() { return prefs.getBoolean("wifi", false) ? "wifi" : "usb"; }
         @JavascriptInterface public boolean covered() { return covered; }
+        @JavascriptInterface public void wakePc() { if (vigia != null) vigia.wakeFromButton(); }
         @JavascriptInterface public void toggleCover() {
             ui.post(new Runnable() { public void run() { applyCover(!covered); } });
         }

@@ -1,7 +1,12 @@
 # Deixa o tablet so com o essencial para o Painel PC.
 # Tudo e DESATIVADO (pm disable), nao apagado: volta com .\enxugar_tablet.ps1 -Restaurar
 # Requer adb com acesso root (o DL 1603 tem build "eng", entao o adbd ja roda como root).
-param([switch]$Restaurar)
+#
+# Wi-Fi (para o tablet ligar o PC pela rede quando ele estiver desligado):
+#   .\enxugar_tablet.ps1 -ConectarWifi   reativa so Configuracoes + teclado e abre a tela do Wi-Fi;
+#                                        voce escolhe a rede e digita a senha NO TABLET
+#   .\enxugar_tablet.ps1 -WifiPronto     desativa de novo Configuracoes + teclado (o Wi-Fi fica ligado)
+param([switch]$Restaurar, [switch]$ConectarWifi, [switch]$WifiPronto)
 $ErrorActionPreference = 'Continue'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $adb = @("$env:USERPROFILE\PainelPC\platform-tools\adb.exe", (Get-Command adb -ErrorAction SilentlyContinue).Source) |
@@ -31,6 +36,25 @@ $manter = @(
   'com.android.keychain', 'com.android.inputdevices', 'com.android.certinstaller'
 )
 
+$wifiApps = @('com.android.settings', 'com.android.inputmethod.latin')
+if ($ConectarWifi) {
+  foreach ($p in $wifiApps) { & $adb shell pm enable $p | Out-Null }
+  & $adb shell svc wifi enable
+  & $adb shell am start -n br.local.painelpc/.MainActivity --ez cover false | Out-Null   # painel sai da frente
+  Start-Sleep 2
+  & $adb shell am start -a android.settings.WIFI_SETTINGS | Out-Null
+  Write-Host 'Escolha a rede e digite a senha no tablet. Depois rode: .\enxugar_tablet.ps1 -WifiPronto'
+  return
+}
+if ($WifiPronto) {
+  & $adb shell am force-stop com.android.settings
+  foreach ($p in $wifiApps) { & $adb shell pm disable $p | Out-Null }
+  & $adb shell am start -n br.local.painelpc/.MainActivity --ez cover true | Out-Null
+  $ok = (& $adb shell dumpsys wifi) -match 'Wi-Fi is enabled' -and ((& $adb shell dumpsys connectivity) -match 'WIFI.*CONNECTED')
+  Write-Host ("Wi-Fi " + $(if ($ok) { 'conectado' } else { 'ligado, mas NAO conectado (rode -ConectarWifi de novo)' }) + '; Configuracoes e teclado desativados.')
+  return
+}
+
 if ($Restaurar) {
   if (-not (Test-Path $lista)) { throw "Lista $lista nao encontrada" }
   foreach ($p in Get-Content $lista) { if ($p) { & $adb shell pm enable $p | Out-Null; "reativado: $p" } }
@@ -52,8 +76,13 @@ foreach ($p in $alvo) {
   if ($r -match 'disabled') { "desativado: $p" } else { "FALHOU: $p -> $r" }
 }
 
-# Wi-Fi desligado (o painel usa USB) e animacoes do sistema desligadas
-& $adb shell svc wifi disable
+# Wi-Fi: fica ligado se ja houver uma rede salva (para ligar o PC pela rede); senao, desligado.
+# Animacoes do sistema desligadas.
+if ((& $adb shell "grep -c network= /data/misc/wifi/wpa_supplicant.conf 2>/dev/null") -match '^[1-9]') {
+  & $adb shell svc wifi enable
+} else {
+  & $adb shell svc wifi disable
+}
 Set-Animacoes '0'
 # Skype vem como app de sistema "persistente": o Android o reabre mesmo desativado.
 # O APK so e renomeado (copia de seguranca em backup_sistema\ no PC).

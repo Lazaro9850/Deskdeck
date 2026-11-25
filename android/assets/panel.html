@@ -138,6 +138,8 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 #off{position:absolute;left:0;right:0;top:4.4rem;bottom:0;background:rgba(3,5,7,.9);display:none;text-align:center;z-index:6}
 #off .big{margin-top:12rem;font-size:3rem;font-weight:bold;color:#ffffff}
 #off .sm{margin-top:1rem;font-size:1.6rem;color:#c9d4de;line-height:2.4rem}
+#bwake{display:none;margin:2.6rem auto 0;width:22rem;height:6.4rem;line-height:6.2rem;border-radius:1.2rem;background:#4fd8f0;border:2px solid #4fd8f0;font-size:2.2rem;font-weight:bold;color:#00141a}
+#bwake.dn{opacity:.7}
 
 #ask{position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.94);display:none;z-index:8}
 #askbox{position:absolute;left:6rem;right:6rem;top:3rem;bottom:3rem;background:#161f2a;border:3px solid #b18cff;border-radius:1.2rem;padding:1.6rem 2rem}
@@ -235,7 +237,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
   </div>
 </div></div>
 
-<div id="off"><div class="big">Aguardando o PC</div><div class="sm" id="offtx">Conecte o cabo USB e deixe o agente rodando no computador.<br>Toque e segure o relógio para mostrar/esconder a barra do Android.</div></div>
+<div id="off"><div class="big" id="offbig">Aguardando o PC</div><div class="sm" id="offtx">Conecte o cabo USB e deixe o agente rodando no computador.<br>Toque e segure o relógio para mostrar/esconder a barra do Android.</div><div id="bwake">Ligar PC</div></div>
 
 <div id="ask">
   <div id="askbox">
@@ -805,6 +807,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
   /* ---------- mensagens do PC ---------- */
   function handle(m) {
     if (!m || !m.t) return;
+    if (m.t === 'guard') { onGuard(m); return; } /* gerada no tablet (PC desligado): nao conta como PC vivo */
     if (m.t === 'link') { linkUp = m.up; if (m.up) lastMsg = Date.now(); else { askQueue = []; askCur = null; $('ask').style.display = 'none'; } tick(); return; }
     lastMsg = Date.now();
     if (m.now) skew = m.now - Date.now();
@@ -825,6 +828,27 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     else if (m.t === 'toast') toast(m.text);
     else if (m.t === 'key') setKeyOn(m.id, m.on);
   }
+  /* PC desligado: o tablet escuta as palmas e liga o PC pela rede (Vigia.java) */
+  var OFF0 = null, guardT = null;
+  function offText(big, sm) {
+    if (!OFF0) OFF0 = [$('offbig').innerHTML, $('offtx').innerHTML];
+    setText($('offbig'), big); $('offtx').innerHTML = esc(sm);
+  }
+  function onGuard(m) {
+    clearTimeout(guardT);
+    $('bwake').style.display = m.known && m.st !== 'idle' ? 'block' : 'none';
+    if (m.st === 'idle') { if (OFF0) { $('offbig').innerHTML = OFF0[0]; $('offtx').innerHTML = OFF0[1]; } return; }
+    var semWifi = 'O tablet está sem Wi-Fi: conecte-o à mesma rede do PC para ligar pela rede.';
+    if (m.st === 'listen') offText('PC desligado', m.wifi ? 'Bata 5 palmas para ligar o computador.' : semWifi);
+    else if (m.st === 'clap') {
+      offText('PC desligado', 'palmas: ' + m.x.n + ' de ' + m.x.need);
+      guardT = setTimeout(function () { onGuard({ st: 'listen', wifi: m.wifi, known: m.known }); }, 3500);
+    }
+    else if (m.st === 'ask') offText('Você quer ligar o computador?', 'Fale qualquer coisa para ligar. Fique em silêncio para cancelar.');
+    else if (m.st === 'waking') offText('Ligando o computador…', 'Aguarde o Windows iniciar; o painel volta sozinho.');
+    else if (m.st === 'cancel') offText('Tudo bem, não vou ligar.', '');
+    else if (m.st === 'nowifi') offText('Sem Wi-Fi', semWifi);
+  }
   window.PB = {
     pump: function () {
       if (!hasBridge) return;
@@ -843,6 +867,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
   tap($('bplay'), function () { send({ t: 'media', cmd: 'playpause' }); if (media) { media.playing = !media.playing; setPlayIcon(media.playing); } });
   tap($('bnext'), function () { send({ t: 'media', cmd: 'next' }); });
   tap($('aallow'), function () { decide('allow'); });
+  tap($('bwake'), function () { if (hasBridge) Bridge.wakePc(); });
   tap($('adeny'), function () { decide('deny'); });
 
   window.addEventListener('resize', fit, false);

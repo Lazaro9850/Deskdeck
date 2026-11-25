@@ -993,6 +993,32 @@ class Handler(BaseHTTPRequestHandler):
 
 
 # --------------------------------------------------------------------- aplicacao
+def wol_info():
+    """Endereco da placa de rede com cabo (MAC + broadcast da rede): o tablet guarda e usa para
+    ligar o PC pela rede (Wake-on-LAN) quando ele estiver desligado."""
+    try:
+        stats, addrs = psutil.net_if_stats(), psutil.net_if_addrs()
+        best = None
+        for name, lst in addrs.items():
+            st = stats.get(name)
+            if not st or not st.isup or re.search(r"loopback|virtual|vethernet|vpn|bluetooth|wsl", name, re.I):
+                continue
+            mac = next((a.address for a in lst if a.family == psutil.AF_LINK), None)
+            ip4 = next((a for a in lst if a.family == socket.AF_INET and not a.address.startswith("169.254.")), None)
+            if not mac or not ip4 or not ip4.netmask:
+                continue
+            ip = [int(x) for x in ip4.address.split(".")]
+            mask = [int(x) for x in ip4.netmask.split(".")]
+            bcast = ".".join(str(i | (255 ^ m)) for i, m in zip(ip, mask))
+            score = (2 if "ethernet" in name.lower() else 0) + (1 if st.speed >= 100 else 0)
+            if best is None or score > best[0]:
+                best = (score, {"mac": mac.replace("-", ":").upper(), "bcast": bcast})
+        return best[1] if best else None
+    except Exception as e:  # noqa: BLE001
+        log.info("wake-on-lan: %s", e)
+        return None
+
+
 class App:
     def __init__(self, cfg):
         self.cfg = cfg
@@ -1020,7 +1046,8 @@ class App:
         tz = datetime.datetime.now().astimezone().utcoffset().total_seconds() / 60
         btns = [{k: b.get(k) for k in ("id", "label", "icon", "color")} for b in self.cfg.get("buttons", [])]
         self.link.send({"t": "hello", "host": socket.gethostname(), "now": int(time.time() * 1000), "tz": tz,
-                        "cfg": {"buttons": btns, "cols": self.cfg.get("cols", 3), "apps": self.apps.public()}})
+                        "cfg": {"buttons": btns, "cols": self.cfg.get("cols", 3), "apps": self.apps.public()},
+                        "wol": wol_info()})
         self.media.art_key = None  # reenviar a capa
         self.force_media.set()
         self.force_ai.set()

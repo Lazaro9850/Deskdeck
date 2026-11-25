@@ -39,6 +39,7 @@ public final class Link {
     private volatile ServerSocket server;
     private volatile Listener listener;
     private volatile boolean connected;
+    private volatile Vigia vigia;
     private Thread acceptThread;
 
     private Link(SharedPreferences p) { prefs = p; }
@@ -49,6 +50,10 @@ public final class Link {
     }
 
     public void setListener(Listener l) { listener = l; }
+    void setVigia(Vigia v) { vigia = v; }
+
+    /** Mensagem gerada no proprio tablet (ex.: estado da escuta com o PC desligado). */
+    public void local(String json) { deliver(json); }
     public boolean isConnected() { return connected; }
 
     public synchronized void start() {
@@ -92,6 +97,8 @@ public final class Link {
 
     private void setConnected(boolean up) {
         connected = up;
+        Vigia v = vigia;
+        if (v != null) v.setLink(up);
         deliver("{\"t\":\"link\",\"up\":" + up + "}");
     }
 
@@ -145,6 +152,7 @@ public final class Link {
                     if (!authed) break;
                 }
                 if (!announced) { setConnected(true); announced = true; }
+                if (line.startsWith("{\"t\": \"hello\"") || line.startsWith("{\"t\":\"hello\"")) saveWol(line);
                 deliver(line);
             }
         } catch (Exception e) {
@@ -155,6 +163,19 @@ public final class Link {
                 current = null;
                 setConnected(false);
             }
+        }
+    }
+
+    /** Guarda o endereco do PC (MAC + broadcast) para liga-lo pela rede quando estiver desligado. */
+    private void saveWol(String line) {
+        try {
+            JSONObject w = new JSONObject(line).optJSONObject("wol");
+            if (w == null) return;
+            String mac = w.optString("mac", ""), bc = w.optString("bcast", "");
+            if (mac.matches("([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}"))
+                prefs.edit().putString("wol_mac", mac).putString("wol_bcast", bc).commit();
+        } catch (Exception e) {
+            Log.w(TAG, "wol: " + e);
         }
     }
 
