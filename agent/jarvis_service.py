@@ -37,7 +37,7 @@ for _p in (os.path.join(ROOT, "libs-jarvis"), os.path.join(ROOT, "libs")):
     if os.path.isdir(_p):
         sys.path.insert(0, _p)
 MODELS = os.path.join(ROOT, "models")
-PHASE = 4
+PHASE = 5
 VIRTUAL_MICS = re.compile(r"droidcam|virtual|cable|stereo mix|mixagem|voicemeeter|nvidia broadcast|iriun", re.I)
 
 
@@ -73,9 +73,69 @@ def load_cfg():
     except (OSError, ValueError):
         c = {}
     d = {"mic": "", "voice": "pf_dora", "speed": 1.05, "threads": 4, "unload_after": 300,
-         "max_listen": 15, "silence_end": 0.9, "no_speech_timeout": 7}
+         "max_listen": 15, "silence_end": 0.9, "no_speech_timeout": 7,
+         "wake_threshold": 0.5, "game_mode": True}
     d.update(c)
     return d
+
+
+STATE_FILE = os.path.join(ROOT, "data", "jarvis_state.json")  # lembra se o "Hey Jarvis" esta ligado
+IMPORT_LOCK = threading.Lock()  # bibliotecas nativas carregadas uma de cada vez
+
+
+def load_state():
+    try:
+        with open(STATE_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_state(**kv):
+    st = load_state()
+    st.update(kv)
+    try:
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(st, f)
+    except OSError:
+        pass
+
+
+# ------------------------------------------------------------------ modo jogo
+def fullscreen_app():
+    """True se o app em primeiro plano ocupa a tela inteira (jogo, video em tela cheia, apresentacao)."""
+    import ctypes
+    from ctypes import wintypes
+    u32 = ctypes.windll.user32
+    st = ctypes.c_int(0)
+    # 2 = app em tela cheia, 3 = Direct3D exclusivo, 4 = modo apresentacao
+    if ctypes.windll.shell32.SHQueryUserNotificationState(ctypes.byref(st)) == 0 and st.value in (2, 3, 4):
+        return True
+    u32.GetForegroundWindow.restype = wintypes.HWND
+    hwnd = u32.GetForegroundWindow()
+    if not hwnd:
+        return False
+    cls = ctypes.create_unicode_buffer(64)
+    u32.GetClassNameW(hwnd, cls, 64)
+    if cls.value in ("Progman", "WorkerW", "Shell_TrayWnd", "Shell_SecondaryTrayWnd"):
+        return False  # area de trabalho e barra de tarefas nao contam
+
+    class MONITORINFO(ctypes.Structure):
+        _fields_ = [("cbSize", wintypes.DWORD), ("rcMonitor", wintypes.RECT), ("rcWork", wintypes.RECT),
+                    ("dwFlags", wintypes.DWORD)]
+    r = wintypes.RECT()
+    if not u32.GetWindowRect(hwnd, ctypes.byref(r)):
+        return False
+    u32.MonitorFromWindow.restype = wintypes.HMONITOR
+    u32.MonitorFromWindow.argtypes = [wintypes.HWND, wintypes.DWORD]
+    mon = u32.MonitorFromWindow(hwnd, 2)
+    mi = MONITORINFO()
+    mi.cbSize = ctypes.sizeof(MONITORINFO)
+    u32.GetMonitorInfoW.argtypes = [wintypes.HMONITOR, ctypes.POINTER(MONITORINFO)]
+    if not mon or not u32.GetMonitorInfoW(mon, ctypes.byref(mi)):
+        return False
+    m = mi.rcMonitor  # janela sem borda cobrindo o monitor inteiro (jogos em "tela cheia sem bordas")
+    return r.left <= m.left and r.top <= m.top and r.right >= m.right and r.bottom >= m.bottom
 
 
 class Jarvis:
@@ -84,16 +144,19 @@ class Jarvis:
         self.lock = threading.Lock()
         self.cfg = load_cfg()
         self.state = "parado"
-        self.wake = False
+        self.wake = bool(load_state().get("wake"))
         self.model = "haiku"
         self.game = False
         self.cancel = threading.Event()
         self.turn = None
         self.whisper = None
         self.kokoro = None
+        self.wakemodel = None
         self.models_lock = threading.Lock()
         self.last_use = time.time()
         threading.Thread(target=self._janitor, name="jarvis-limpeza", daemon=True).start()
+        threading.Thread(target=self._game_watch, name="jarvis-modo-jogo", daemon=True).start()
+        threading.Thread(target=self._wake_loop, name="jarvis-hey-jarvis", daemon=True).start()
 
     # ------------------------------------------------------------- saida
     def emit(self, **ev):
@@ -144,6 +207,8 @@ class Jarvis:
             self.turn.start()
         elif cmd == "wake":
             self.wake = bool(msg.get("on"))
+            save_state(wake=self.wake)
+            log("hey jarvis %s", "ligado" if self.wake else "desligado")
             self.set_state(self.state)
         elif cmd == "status":
             self.set_state(self.state)
@@ -155,8 +220,9 @@ class Jarvis:
             self.set_state("ouvindo")
             # Bibliotecas do microfone antes de carregar o Whisper em paralelo (evita duas threads
             # carregando DLLs nativas ao mesmo tempo).
-            import numpy  # noqa: F401
-            import sounddevice  # noqa: F401
+            with IMPORT_LOCK:
+                import numpy  # noqa: F401
+                import sounddevice  # noqa: F401
             threading.Thread(target=self._load_whisper, daemon=True).start()  # carrega enquanto voce fala
             audio = self.capture()
             self.set_state("transcrevendo")
@@ -277,7 +343,8 @@ class Jarvis:
     def _load_whisper(self):
         with self.models_lock:
             if self.whisper is None:
-                from faster_whisper import WhisperModel
+                with IMPORT_LOCK:
+                    from faster_whisper import WhisperModel
                 self.whisper = WhisperModel(os.path.join(MODELS, "whisper-small"), device="cpu",
                                             compute_type="int8", cpu_threads=int(self.cfg["threads"]))
         return self.whisper
@@ -443,7 +510,8 @@ class Jarvis:
     def _load_kokoro(self):
         with self.models_lock:
             if self.kokoro is None:
-                from kokoro_onnx import Kokoro
+                with IMPORT_LOCK:
+                    from kokoro_onnx import Kokoro
                 k = os.path.join(MODELS, "kokoro")
                 self.kokoro = Kokoro(os.path.join(k, "kokoro-v1.0.onnx"), os.path.join(k, "voices-v1.0.bin"))
         return self.kokoro
@@ -507,6 +575,100 @@ class Jarvis:
         if said:
             self.emit(ev="reply", text=" ".join(said), final=True)
         self.last_use = time.time()
+
+    # ------------------------------------------------------------- "Hey Jarvis"
+    def _load_wake(self):
+        if self.wakemodel is None:
+            with IMPORT_LOCK:
+                import types
+                # o pacote importa o modulo de TREINO (scipy/scikit-learn, ~150 MB) no __init__;
+                # para so detectar a frase ele nao e necessario
+                sys.modules.setdefault("openwakeword.custom_verifier_model",
+                                       types.SimpleNamespace(train_custom_verifier=None))
+                from openwakeword.model import Model
+                w = os.path.join(MODELS, "wakeword")
+                self.wakemodel = Model(wakeword_models=[os.path.join(w, "hey_jarvis_v0.1.onnx")],
+                                       inference_framework="onnx",
+                                       melspec_model_path=os.path.join(w, "melspectrogram.onnx"),
+                                       embedding_model_path=os.path.join(w, "embedding_model.onnx"))
+        return self.wakemodel
+
+    def _wake_active(self):
+        return self.wake and not self.game and not (self.turn and self.turn.is_alive())
+
+    def _wake_loop(self):
+        """Escuta continua da frase "Hey Jarvis" (~2% de um nucleo). Pausa sozinha em jogo,
+        durante uma conversa e quando a chave esta desligada."""
+        while True:
+            if not self._wake_active():
+                time.sleep(0.5)
+                continue
+            try:
+                self._listen_for_wake()
+            except Exception as e:  # noqa: BLE001
+                log("hey jarvis: %s", e)
+                time.sleep(5)
+
+    def _listen_for_wake(self):
+        with IMPORT_LOCK:
+            import sounddevice as sd
+        m = self._load_wake()
+        m.reset()
+        q = queue.Queue()
+        thr = float(self.cfg["wake_threshold"])
+        with sd.InputStream(device=self._mic(), samplerate=16000, channels=1, dtype="int16", blocksize=1280,
+                            callback=lambda d, f, t, s: q.put(d[:, 0].copy())):
+            while self._wake_active():
+                try:
+                    b = q.get(timeout=0.5)
+                except queue.Empty:
+                    continue
+                score = m.predict(b).get("hey_jarvis_v0.1", 0.0)
+                if score >= thr:
+                    log("hey jarvis detectado (%.2f)", score)
+                    break
+            else:
+                return  # pausou (desligado, jogo ou conversa em andamento)
+        self._chime()
+        self.handle({"cmd": "listen"})
+        time.sleep(1.0)
+
+    @staticmethod
+    def _chime():
+        """Bipe curto e suave: avisa que ouviu o "Hey Jarvis" e ja esta escutando o pedido."""
+        try:
+            import numpy as np
+            import sounddevice as sd
+            sr = 24000
+            t = np.arange(int(sr * 0.09)) / sr
+            env = np.minimum(1, np.minimum(t, t[::-1]) / 0.01)
+            tone = np.concatenate([np.sin(2 * np.pi * 880 * t), np.sin(2 * np.pi * 1320 * t)]) * np.tile(env, 2) * 0.25
+            sd.play(tone.astype(np.float32), sr)
+            time.sleep(0.25)
+        except Exception:  # noqa: BLE001
+            pass
+
+    # ------------------------------------------------------------- modo jogo
+    def _game_watch(self):
+        """A cada 2 s ve se ha um app em tela cheia. Em jogo: pausa o "Hey Jarvis" e tira os modelos
+        de voz da memoria (~750 MB livres para o jogo). O botao Falar do tablet continua funcionando."""
+        while True:
+            time.sleep(2)
+            if not self.cfg.get("game_mode", True):
+                continue
+            try:
+                g = fullscreen_app()
+            except Exception:  # noqa: BLE001
+                g = False
+            if g == self.game:
+                continue
+            self.game = g
+            log("modo jogo %s", "ligado" if g else "desligado")
+            if g and not (self.turn and self.turn.is_alive()):
+                with self.models_lock:
+                    self.whisper = self.kokoro = None
+                gc.collect()
+            self.set_state(self.state)
 
     # ------------------------------------------------------------- memoria
     def _janitor(self):

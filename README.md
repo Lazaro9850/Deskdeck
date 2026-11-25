@@ -135,7 +135,8 @@ a conversa e um botão grande **Falar/Parar**. O plano completo está em [docs/P
 | 2. Ouvir e falar de verdade | ✅ microfone do PC + **Whisper small** (fala → texto) + **Kokoro** (voz PT-BR), tudo local |
 | 3. Cérebro (Claude Code) | ✅ pela sua assinatura do Claude Code (sem chave de API): Haiku para pedidos rápidos, Sonnet para os complexos; pesquisa na web; lembra da conversa por 10 min |
 | 4. Ações no PC (MCP) | ✅ abrir e fechar apps, música, volume, recorte, estado do PC e processos; **fechar app pede Permitir/Negar no tablet** |
-| 5. "Hey Jarvis" e modo jogo · 6. Acabamento | planejadas |
+| 5. "Hey Jarvis" e modo jogo | ✅ diga **"Hey Jarvis"** (pronúncia em inglês) e ele responde com um bipe; com um jogo ou vídeo em tela cheia, a escuta pausa sozinha e os modelos de voz saem da memória |
+| 6. Acabamento | planejada |
 
 **O que dá para pedir:** "abre o Discord", "pausa a música", "próxima", "aumenta o volume", "tira um print",
 "como está o PC?", "o que está pesando agora?", "fecha o Paint" (pede confirmação no tablet), além de perguntas
@@ -151,17 +152,20 @@ As respostas usam o **limite do seu plano** (o mesmo das barras da aba Painel). 
 .\install_pc.ps1 -Jarvis   # libs de voz (~320 MB) e modelos (~800 MB, SHA-256 conferido)
 ```
 
-* O Jarvis roda num processo separado, aberto só quando a aba é usada. Parado, ele ocupa ~10 MB.
+* **"Hey Jarvis"**: ligue na chave da aba Jarvis (fica salvo). Escutando, gasta ~4% de um núcleo (~0,3% de um Ryzen 5 5600G) e ~125 MB; em **modo jogo** a escuta pausa e o custo vai a zero. O botão Falar funciona sempre.
+* O Jarvis roda num processo separado, aberto só quando a aba é usada (ou no login, se o "Hey Jarvis" estiver ligado). Parado, ele ocupa ~10 MB.
   Com os modelos carregados, ocupa ~750 MB, e eles saem da memória depois de 5 min sem uso.
 * O áudio é processado **no PC**: nada de voz sai do computador. Só o **texto** do pedido vai para o Claude Code.
 * Opções em `config.json`, bloco `"jarvis"`:
 
 ```json
-"jarvis": { "mic": "AB13X", "voice": "pf_dora", "speed": 1.05 }
+"jarvis": { "mic": "AB13X", "voice": "pf_dora", "speed": 1.05, "wake_threshold": 0.5, "game_mode": true }
 ```
 
   `mic` é parte do nome do microfone; se ficar vazio, ele usa o padrão do Windows, ou o headset se o padrão for virtual (DroidCam etc.).
   `voice` aceita `pf_dora` (feminina), `pm_alex` ou `pm_santa` (masculinas).
+  `wake_threshold`: sensibilidade do "Hey Jarvis" (menor = dispara mais fácil; padrão 0,5).
+  `game_mode`: pausar a escuta com app em tela cheia (padrão `true`).
 
 ## Deixar o tablet leve (opcional, para tablets dedicados)
 

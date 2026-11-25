@@ -227,7 +227,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     </div>
     <div id="jconv" class="card">
       <div class="h">Conversa</div>
-      <div id="jchips"><b id="jmodel">Haiku</b><b id="jphase">Fase 1 · simulação</b></div>
+      <div id="jchips"><b id="jgame" style="display:none;border-color:#ffc233;color:#ffc233">Modo jogo</b><b id="jmodel">Haiku</b><b id="jphase">Fase 1 · simulação</b></div>
       <div id="jlines"><div class="jempty">Toque em <b>Falar</b> e fale no microfone do PC.<br>Pergunte qualquer coisa: contas, clima, notícias, ideias…</div></div>
     </div>
     <div id="jtalk"><svg viewBox="0 0 24 24"><path fill="#00141a" id="jtalkic" d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3zm-7 9h2a5 5 0 0 0 10 0h2a7 7 0 0 1-6 6.9V21h-2v-3.1A7 7 0 0 1 5 11z"/></svg><span id="jtalktx">Falar</span></div>
@@ -680,7 +680,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
   var J = { state: 'desligado', level: 0, wake: false, conv: [], t0: Date.now(), timer: null };
   var JSTATE = {
     desligado: ['Jarvis', 'toque em Falar', [79, 216, 240]],
-    parado: ['Em espera', 'toque em Falar', [79, 216, 240]],
+    parado: ['Em espera', '', [79, 216, 240]],
     ouvindo: ['Ouvindo…', 'fale agora · toque para parar', [60, 255, 138]],
     transcrevendo: ['Entendendo…', '', [177, 140, 255]],
     pensando: ['Pensando…', '', [177, 140, 255]],
@@ -693,14 +693,16 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
       J.state = m.state; J.wake = !!m.wake;
       var s = JSTATE[m.state] || [m.state, '', [79, 216, 240]];
       setText($('jst'), s[0]);
-      setText($('jdet'), m.detail === 'interrompido' ? 'interrompido' : (m.detail || s[1]));
+      var dica = s[1] || (m.state === 'parado' ? ((m.wake && !m.game) ? 'diga "Hey Jarvis" ou toque em Falar' : 'toque em Falar') : '');
+      setText($('jdet'), m.detail || dica);
       $('jst').style.color = 'rgb(' + s[2].join(',') + ')';
       if (m.model) setText($('jmodel'), m.model.charAt(0).toUpperCase() + m.model.slice(1));
       if (m.phase) setText($('jphase'), m.phase === 1 ? 'Fase 1 · simulação' : (m.phase === 2 ? 'Fase 2 · repete o que ouviu' : 'Claude Code'));
       $('jtalk').className = jbusy() ? 'on' : '';
       setText($('jtalktx'), jbusy() ? 'Parar' : 'Falar');
       $('jwake').className = J.wake ? 'on' : '';
-      setText($('jwakev'), J.wake ? 'Ligado' : 'Desligado');
+      setText($('jwakev'), J.wake ? (m.game ? 'Pausado' : 'Ligado') : 'Desligado');
+      $('jgame').style.display = m.game ? 'inline-block' : 'none';
       if (m.state !== 'ouvindo') J.level = 0;
     } else if (m.ev === 'level') {
       J.level = m.v || 0;

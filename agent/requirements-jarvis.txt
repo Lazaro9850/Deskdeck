@@ -4,3 +4,4 @@ numpy>=1.26
 sounddevice>=0.4.6     # microfone e alto-falante (PortAudio)
 faster-whisper>=1.0    # fala -> texto, local (CTranslate2)
 kokoro-onnx>=0.4       # texto -> fala, local (voz PT-BR)
+# openwakeword ("Hey Jarvis"): instalado a parte com --no-deps pelo install_pc.ps1 -Jarvis

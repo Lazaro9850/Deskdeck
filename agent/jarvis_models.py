@@ -13,6 +13,7 @@ import urllib.request
 
 HF = "https://huggingface.co/Systran/faster-whisper-small/resolve/main/"
 GH = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/"
+OWW = "https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/"
 
 # (pasta, arquivo, url, sha256 ou None para arquivos pequenos de configuracao)
 FILES = [
@@ -23,6 +24,11 @@ FILES = [
     # fp32: no Ryzen 5 5600G gera fala a ~4x o tempo real; a versao int8 ficou 10x mais lenta (0,4x)
     ("kokoro", "kokoro-v1.0.onnx", GH + "kokoro-v1.0.onnx", "beb0d1848dee9a49da392cc3df26958d46cfa35d321edf434f52949153f0df3a"),
     ("kokoro", "voices-v1.0.bin", GH + "voices-v1.0.bin", "bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d"),
+    # wake word "hey jarvis" (openWakeWord v0.5.1). O GitHub nao publica hash para esse release antigo:
+    # os valores abaixo foram fixados no primeiro download e barram qualquer arquivo diferente depois.
+    ("wakeword", "melspectrogram.onnx", OWW + "melspectrogram.onnx", "ba2b0e0f8b7b875369a2c89cb13360ff53bac436f2895cced9f479fa65eb176f"),
+    ("wakeword", "embedding_model.onnx", OWW + "embedding_model.onnx", "70d164290c1d095d1d4ee149bc5e00543250a7316b59f31d056cff7bd3075c1f"),
+    ("wakeword", "hey_jarvis_v0.1.onnx", OWW + "hey_jarvis_v0.1.onnx", "94a13cfe60075b132f6a472e7e462e8123ee70861bc3fb58434a73712ee0d2cb"),
 ]
 
 

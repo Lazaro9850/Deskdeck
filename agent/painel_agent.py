@@ -1330,6 +1330,14 @@ def main():
     # token das ferramentas do Jarvis: novo a cada execucao, legivel so pela pasta de dados do usuario
     with open(os.path.join(DATA, "agent_token"), "w", encoding="ascii") as f:
         f.write(app.token)
+    # "Hey Jarvis" ligado: o servico precisa estar rodando desde o inicio para escutar a frase
+    try:
+        with open(os.path.join(DATA, "jarvis_state.json"), encoding="utf-8") as f:
+            if json.load(f).get("wake"):
+                app.actions.submit(app.jarvis.send, {"cmd": "status"})
+                log.info("Hey Jarvis ligado: iniciando o Jarvis")
+    except (OSError, ValueError):
+        pass
     log.info("Painel PC iniciado. adb=%s", app.link.adb)
     threading.Thread(target=srv.serve_forever, name="http", daemon=True).start()
     threading.Thread(target=app.link.loop, name="link", daemon=True).start()
