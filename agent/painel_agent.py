@@ -1047,7 +1047,7 @@ class App:
             self.force_procs.set()
         elif t == "jarvis":
             cmd = {k: v for k, v in m.items() if k != "t"}
-            if cmd.get("cmd") in ("listen", "stop", "wake", "status"):
+            if cmd.get("cmd") in ("listen", "stop", "wake", "claps", "status"):
                 self.actions.submit(self.jarvis.send, cmd)
         elif t == "launch":
             self.actions.submit(self.do_launch, m.get("id"))
@@ -1327,15 +1327,25 @@ def main():
         return 1
     app = App(cfg)
     Handler.app = app
+    if "--demo" in sys.argv:  # dados ficticios para prints/GIFs; nenhuma acao no PC
+        import demo
+        demo.install(app)
+        log.info("MODO DEMONSTRACAO: dados ficticios")
+        threading.Thread(target=srv.serve_forever, name="http", daemon=True).start()
+        threading.Thread(target=app.link.loop, name="link", daemon=True).start()
+        threading.Thread(target=app.media_watch, name="media-watch", daemon=True).start()
+        app.sender()
+        return 0
     # token das ferramentas do Jarvis: novo a cada execucao, legivel so pela pasta de dados do usuario
     with open(os.path.join(DATA, "agent_token"), "w", encoding="ascii") as f:
         f.write(app.token)
     # "Hey Jarvis" ligado: o servico precisa estar rodando desde o inicio para escutar a frase
     try:
         with open(os.path.join(DATA, "jarvis_state.json"), encoding="utf-8") as f:
-            if json.load(f).get("wake"):
+            st = json.load(f)
+            if st.get("wake") or st.get("claps"):
                 app.actions.submit(app.jarvis.send, {"cmd": "status"})
-                log.info("Hey Jarvis ligado: iniciando o Jarvis")
+                log.info("Hey Jarvis/palmas ligado: iniciando o Jarvis")
     except (OSError, ValueError):
         pass
     log.info("Painel PC iniciado. adb=%s", app.link.adb)

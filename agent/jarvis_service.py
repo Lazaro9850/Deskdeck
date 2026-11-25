@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Jarvis: assistente de voz do SteamDeck (processo separado do agente do painel).
+Jarvis: assistente de voz do DeskDeck (processo separado do agente do painel).
 
 Comunicacao com o agente (painel_agent.py) por stdin/stdout, uma mensagem JSON por linha.
 
@@ -8,6 +8,7 @@ Agente -> Jarvis (comandos):
   {"cmd": "listen"}            comecar a ouvir (botao "Falar" do tablet; depois, wake word)
   {"cmd": "stop"}              parar o que estiver fazendo (ouvir, pensar ou falar)
   {"cmd": "wake", "on": bool}  liga/desliga a wake word "hey jarvis" (fase 5)
+  {"cmd": "claps", "on": bool} liga/desliga abrir com palmas (v2)
   {"cmd": "status"}            reenviar o estado atual
 
 Jarvis -> agente (eventos; o agente repassa ao tablet como {"t": "jarvis", ...}):
@@ -74,7 +75,8 @@ def load_cfg():
         c = {}
     d = {"mic": "", "voice": "pf_dora", "speed": 1.05, "threads": 4, "unload_after": 300,
          "max_listen": 15, "silence_end": 0.9, "no_speech_timeout": 7,
-         "wake_threshold": 0.5, "game_mode": True, "barge_in": True}
+         "wake_threshold": 0.5, "game_mode": True, "barge_in": True,
+         "claps": 5, "clap_rise": 25, "clap_level": -36}
     d.update(c)
     return d
 
@@ -144,7 +146,9 @@ class Jarvis:
         self.lock = threading.Lock()
         self.cfg = load_cfg()
         self.state = "parado"
-        self.wake = bool(load_state().get("wake"))
+        st = load_state()
+        self.wake = bool(st.get("wake"))
+        self.claps = bool(st.get("claps"))  # abrir com palmas
         self.model = "haiku"
         self.game = False
         self.cancel = threading.Event()
@@ -167,7 +171,8 @@ class Jarvis:
 
     def set_state(self, state, **extra):
         self.state = state
-        self.emit(ev="state", state=state, wake=self.wake, model=self.model, game=self.game, phase=PHASE, **extra)
+        self.emit(ev="state", state=state, wake=self.wake, claps=self.claps, model=self.model, game=self.game,
+                  phase=PHASE, **extra)
 
     def check(self):
         if self.cancel.is_set():
@@ -209,6 +214,11 @@ class Jarvis:
             self.wake = bool(msg.get("on"))
             save_state(wake=self.wake)
             log("hey jarvis %s", "ligado" if self.wake else "desligado")
+            self.set_state(self.state)
+        elif cmd == "claps":
+            self.claps = bool(msg.get("on"))
+            save_state(claps=self.claps)
+            log("palmas %s", "ligado" if self.claps else "desligado")
             self.set_state(self.state)
         elif cmd == "status":
             self.set_state(self.state)
@@ -522,6 +532,15 @@ class Jarvis:
             err = (result or {}).get("result") or (proc.stderr.read() if proc.stderr else "") or "sem resposta"
             log("claude falhou: %s", str(err)[:300])
             self.session_id = None
+            if not got_text and re.search(r"limit", str(err), re.I):
+                # limite do plano: avisa falando, com o horario de volta quando o Claude informa
+                m = re.search(r"resets\s+(\d{1,2})(?::(\d\d))?\s*(am|pm)", str(err), re.I)
+                volta = ""
+                if m:
+                    h = int(m.group(1)) % 12 + (12 if m.group(3).lower() == "pm" else 0)
+                    volta = " Ele volta às %d%s." % (h, (" e " + m.group(2)) if m.group(2) and m.group(2) != "00" else " horas")
+                yield "O limite do seu plano do Claude acabou por agora." + volta + "\n"
+                return
             if not got_text:
                 raise RuntimeError("o Claude não respondeu agora")
 
@@ -685,10 +704,10 @@ class Jarvis:
         return self.wakemodel
 
     def _wake_active(self):
-        return self.wake and not self.game and not (self.turn and self.turn.is_alive())
+        return (self.wake or self.claps) and not self.game and not (self.turn and self.turn.is_alive())
 
     def _wake_loop(self):
-        """Escuta continua da frase "Hey Jarvis" (~2% de um nucleo). Pausa sozinha em jogo,
+        """Escuta continua da frase "Hey Jarvis" (~2% de um nucleo) e/ou das palmas (~0,1%). Pausa sozinha em jogo,
         durante uma conversa e quando a chave esta desligada."""
         while True:
             if not self._wake_active():
@@ -701,25 +720,40 @@ class Jarvis:
                 time.sleep(5)
 
     def _listen_for_wake(self):
+        """Um so fluxo do microfone alimenta o "Hey Jarvis" (se ligado) e o detector de palmas (se ligado)."""
         with IMPORT_LOCK:
             import sounddevice as sd
-        m = self._load_wake()
-        m.reset()
+        from palmas import ClapDetector
+        c = self.cfg
+        m = None
+        if self.wake:
+            m = self._load_wake()
+            m.reset()
+        clap = ClapDetector(c.get("claps", 5), c.get("clap_rise", 25), c.get("clap_level", -36))
         q = queue.Queue()
-        thr = float(self.cfg["wake_threshold"])
+        thr = float(c["wake_threshold"])
+        mode = (self.wake, self.claps)
         with sd.InputStream(device=self._mic(), samplerate=16000, channels=1, dtype="int16", blocksize=1280,
                             callback=lambda d, f, t, s: q.put(d[:, 0].copy())):
-            while self._wake_active():
+            while self._wake_active() and (self.wake, self.claps) == mode:
                 try:
                     b = q.get(timeout=0.5)
                 except queue.Empty:
                     continue
-                score = m.predict(b).get("hey_jarvis_v0.1", 0.0)
-                if score >= thr:
-                    log("hey jarvis detectado (%.2f)", score)
-                    break
+                if self.claps:
+                    new, fired = clap.feed(b)
+                    if new:
+                        self.emit(ev="clap", n=clap.count(), need=clap.need)  # contador no tablet
+                    if fired:
+                        log("%d palmas detectadas", clap.need)
+                        break
+                if m is not None:
+                    score = m.predict(b).get("hey_jarvis_v0.1", 0.0)
+                    if score >= thr:
+                        log("hey jarvis detectado (%.2f)", score)
+                        break
             else:
-                return  # pausou (desligado, jogo ou conversa em andamento)
+                return  # pausou (desligado, jogo, conversa) ou a chave mudou: recomeca no laco
         self._chime()
         self.handle({"cmd": "listen"})
         time.sleep(1.0)

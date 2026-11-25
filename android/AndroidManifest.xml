@@ -13,7 +13,7 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
-        android:label="Painel PC"
+        android:label="DeskDeck"
         android:icon="@drawable/icon"
         android:allowBackup="false"
         android:hardwareAccelerated="true"
