@@ -1,0 +1,6 @@
+# Dependencias do Jarvis (instaladas a parte, em %USERPROFILE%\PainelPC\libs-jarvis,
+# com: .\install_pc.ps1 -Jarvis). O agente do painel nao precisa delas.
+numpy>=1.26
+sounddevice>=0.4.6     # microfone e alto-falante (PortAudio)
+faster-whisper>=1.0    # fala -> texto, local (CTranslate2)
+kokoro-onnx>=0.4       # texto -> fala, local (voz PT-BR)

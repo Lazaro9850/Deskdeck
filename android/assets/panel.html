@@ -13,21 +13,47 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 #top{position:absolute;left:0;right:0;top:0;height:4.4rem;border-bottom:2px solid #34465a;z-index:5;background:#030507}
 #brand{position:absolute;left:1rem;top:0;line-height:4.4rem;font-size:1.8rem;font-weight:bold;letter-spacing:.1rem;color:#ffffff}
 #brand b{color:#4fd8f0}
-#link{position:absolute;left:14rem;top:0;line-height:4.4rem;font-size:1.4rem;font-weight:bold;color:#c9d4de;white-space:nowrap;max-width:9rem;overflow:hidden;text-overflow:ellipsis}
+#link{position:absolute;left:14rem;top:0;line-height:4.4rem;font-size:1.4rem;font-weight:bold;color:#c9d4de;white-space:nowrap;max-width:6.4rem;overflow:hidden;text-overflow:ellipsis}
 #dot{display:inline-block;width:1.2rem;height:1.2rem;border-radius:.6rem;background:#ff4d4d;margin-right:.6rem;vertical-align:middle;position:relative;top:-.15rem;border:2px solid #030507}
 #dot.on{background:#3cff8a}
-#tabs{position:absolute;left:50%;top:.5rem;width:33rem;margin-left:-16.5rem;height:3.4rem;background:#0d141c;border:2px solid #4a5d72;border-radius:1.7rem}
-.tab{position:absolute;top:0;width:33.34%;height:100%;line-height:3rem;text-align:center;font-size:1.6rem;font-weight:bold;color:#9fb0c2;border-radius:1.6rem}
-#tab0{left:0}#tab1{left:33.33%}#tab2{right:0}
+#tabs{position:absolute;left:50%;top:.5rem;width:39rem;margin-left:-19.5rem;height:3.4rem;background:#0d141c;border:2px solid #4a5d72;border-radius:1.7rem}
+.tab{position:absolute;top:0;width:25%;height:100%;line-height:3rem;text-align:center;font-size:1.45rem;font-weight:bold;color:#9fb0c2;border-radius:1.6rem}
+#tab0{left:0}#tab1{left:25%}#tab2{left:50%}#tab3{right:0}
 .tab.sel{background:#4fd8f0;color:#00141a}
 #clock{position:absolute;right:1rem;top:0;line-height:4.4rem;font-size:2.8rem;font-weight:bold;color:#ffffff}
 #date{position:absolute;right:10.4rem;top:0;line-height:4.4rem;font-size:1.5rem;font-weight:bold;color:#c9d4de;white-space:nowrap}
 
 #pages{position:absolute;left:0;right:0;top:4.4rem;bottom:0;overflow:hidden}
-#strip{position:absolute;left:0;top:0;bottom:0;width:300%;-webkit-transform:translate3d(0,0,0)}
+#strip{position:absolute;left:0;top:0;bottom:0;width:400%;-webkit-transform:translate3d(0,0,0)}
 #strip.anim{-webkit-transition:-webkit-transform .28s ease-out}
-.page{position:absolute;top:0;bottom:0;width:33.3333%}
-#p1{left:0}#p2{left:33.3333%}#p3{left:66.6667%}
+.page{position:absolute;top:0;bottom:0;width:25%}
+#p1{left:0}#p2{left:25%}#p3{left:50%}#p4{left:75%}
+
+/* ---- pagina 4: Jarvis */
+#jorbw{left:.8rem;top:.8rem;width:33rem;bottom:.8rem}
+#jorb{position:absolute;left:50%;top:1.6rem;width:28rem;height:28rem;margin-left:-14rem}
+#jst{position:absolute;left:0;right:0;top:30.6rem;text-align:center;font-size:2.6rem;font-weight:bold;color:#ffffff}
+#jdet{position:absolute;left:1rem;right:1rem;top:34.4rem;text-align:center;font-size:1.35rem;font-weight:bold;color:#9fb0c2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#jconv{left:34.6rem;top:.8rem;right:.8rem;bottom:10.4rem;padding:1rem 1.3rem}
+#jchips{position:absolute;right:1.3rem;top:.9rem;font-size:1.15rem;font-weight:bold;color:#9fb0c2;white-space:nowrap}
+#jchips b{display:inline-block;margin-left:.5rem;padding:.2rem .8rem;border:2px solid #4a5d72;border-radius:1rem;color:#c9d4de}
+#jlines{position:absolute;left:1.3rem;right:1.3rem;top:3.6rem;bottom:1rem;overflow:hidden}
+.jx{margin-bottom:1.2rem}
+.jx .who{font-size:1.1rem;font-weight:bold;letter-spacing:.12rem;color:#9fb0c2}
+.jx .you{font-size:1.7rem;font-weight:bold;color:#ffffff;margin-top:.2rem}
+.jx .jar{font-size:1.7rem;font-weight:bold;color:#4fd8f0;margin-top:.2rem;line-height:2.2rem}
+.jempty{font-size:1.5rem;color:#9fb0c2;line-height:2.3rem}
+#jtalk{position:absolute;left:34.6rem;right:15rem;bottom:.8rem;height:8.8rem;border-radius:1.2rem;background:#4fd8f0;border:2px solid #4fd8f0;text-align:center}
+#jtalk svg{position:absolute;left:2rem;top:2.2rem;width:4.4rem;height:4.4rem}
+#jtalk span{display:block;margin-left:5rem;line-height:8.4rem;font-size:2.6rem;font-weight:bold;color:#00141a}
+#jtalk.on{background:#5a1a1f;border-color:#ff5a55}
+#jtalk.on span{color:#ffb3b0;font-size:2.1rem}
+#jtalk.dn{opacity:.75}
+#jwake{position:absolute;right:.8rem;bottom:.8rem;width:13.4rem;height:8.8rem;border-radius:1.2rem;background:#18222e;border:2px solid #3b4d61;text-align:center}
+#jwake .k{margin-top:1.6rem;font-size:1.2rem;font-weight:bold;letter-spacing:.1rem;color:#9fb0c2}
+#jwake .v{margin-top:.5rem;font-size:1.9rem;font-weight:bold;color:#ffffff}
+#jwake.on{border-color:#3cff8a}#jwake.on .v{color:#3cff8a}
+#jwake.dn{background:#2b3a4b}
 
 /* ---- pagina 3: processos (como o Gerenciador de Tarefas) */
 #pt{left:.8rem;top:.8rem;right:.8rem;bottom:.8rem}
@@ -117,6 +143,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 #askbox{position:absolute;left:6rem;right:6rem;top:3rem;bottom:3rem;background:#161f2a;border:3px solid #b18cff;border-radius:1.2rem;padding:1.6rem 2rem}
 #askh{font-size:1.4rem;letter-spacing:.15rem;color:#c4a8ff;font-weight:bold;text-transform:uppercase}
 #asktool{font-size:2.6rem;font-weight:bold;margin-top:.6rem}
+#askdet.big{font-family:"Roboto","Droid Sans",Arial,sans-serif;font-size:4rem;font-weight:bold;text-align:center;line-height:4.6rem;padding-top:5.4rem;color:#4fd8f0;text-transform:capitalize}
 #askcwd{font-size:1.3rem;color:#b8c4d0;margin-top:.3rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #askdet{position:absolute;left:2rem;right:2rem;top:10.4rem;bottom:9.4rem;background:#000000;border:2px solid #34465a;border-radius:.7rem;padding:1rem;font-family:"Droid Sans Mono",monospace;font-size:1.5rem;line-height:2rem;color:#ffffff;overflow:hidden;word-wrap:break-word;white-space:pre-wrap}
 #askleft{position:absolute;right:2rem;top:1.8rem;font-size:1.5rem;font-weight:bold;color:#ffffff}
@@ -132,7 +159,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 <div id="top">
   <div id="brand">PAINEL <b>PC</b></div>
   <div id="link"><span id="dot"></span><span id="linktx">Aguardando o PC</span></div>
-  <div id="tabs"><div class="tab sel" id="tab0">Apps</div><div class="tab" id="tab1">Painel</div><div class="tab" id="tab2">Processos</div></div>
+  <div id="tabs"><div class="tab sel" id="tab0">Apps</div><div class="tab" id="tab1">Painel</div><div class="tab" id="tab2">Processos</div><div class="tab" id="tab3">Jarvis</div></div>
   <div id="date"></div>
   <div id="clock">--:--</div>
 </div>
@@ -190,6 +217,21 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
         <tbody id="ptb"></tbody>
       </table>
     </div>
+  </div>
+
+  <div class="page" id="p4">
+    <div id="jorbw" class="card">
+      <canvas id="jorb"></canvas>
+      <div id="jst">Jarvis</div>
+      <div id="jdet">toque em Falar</div>
+    </div>
+    <div id="jconv" class="card">
+      <div class="h">Conversa</div>
+      <div id="jchips"><b id="jmodel">Haiku</b><b id="jphase">Fase 1 · simulação</b></div>
+      <div id="jlines"><div class="jempty">Toque em <b>Falar</b> e fale no microfone do PC.<br>Pergunte qualquer coisa: contas, clima, notícias, ideias…</div></div>
+    </div>
+    <div id="jtalk"><svg viewBox="0 0 24 24"><path fill="#00141a" id="jtalkic" d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3zm-7 9h2a5 5 0 0 0 10 0h2a7 7 0 0 1-6 6.9V21h-2v-3.1A7 7 0 0 1 5 11z"/></svg><span id="jtalktx">Falar</span></div>
+    <div id="jwake"><div class="k">"HEY JARVIS"</div><div class="v" id="jwakev">Desligado</div></div>
   </div>
 </div></div>
 
@@ -297,13 +339,15 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
   /* ---------- paginas (arrastar para o lado ou tocar nas abas) ---------- */
   function goPage(n, animate) {
     var old = page;
-    page = Math.max(0, Math.min(2, n));
+    page = Math.max(0, Math.min(3, n));
     var s = $('strip'), W = $('pages').offsetWidth;
     s.className = animate ? 'anim' : '';
     s.style.webkitTransform = 'translate3d(' + (-page * W) + 'px,0,0)';
     $('tab0').className = 'tab' + (page === 0 ? ' sel' : '');
     $('tab1').className = 'tab' + (page === 1 ? ' sel' : '');
     $('tab2').className = 'tab' + (page === 2 ? ' sel' : '');
+    $('tab3').className = 'tab' + (page === 3 ? ' sel' : '');
+    jarvisAnim(page === 3);
     if (page !== old) send({ t: 'page', n: page }); /* o PC so calcula os processos com a aba aberta */
     if (page === 1) { drawSpark($('cpuc'), cpuHist, '#4fd8f0'); drawSpark($('gpuc'), gpuHist, '#3cff8a'); drawClaudeChart(); }
   }
@@ -316,7 +360,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
       if (drag) {
         e.preventDefault();
         var W = pg.offsetWidth, x = -page * W + dx;
-        if (x > 0) x = x / 3; if (x < -2 * W) x = -2 * W + (x + 2 * W) / 3;
+        if (x > 0) x = x / 3; if (x < -3 * W) x = -3 * W + (x + 3 * W) / 3;
         $('strip').style.webkitTransform = 'translate3d(' + x + 'px,0,0)';
       }
     }, false);
@@ -333,7 +377,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     var fs = Math.min(window.innerWidth / 80, window.innerHeight / 44.4);
     document.documentElement.style.fontSize = fs + 'px';
     sizeCanvas($('cpuc')); sizeCanvas($('gpuc')); sizeCanvas($('clchart'));
-    layoutKeys(); layoutApps(); layoutProcs();
+    layoutKeys(); layoutApps(); layoutProcs(); sizeCanvas($('jorb'));
     goPage(page, false);
   }
   function sizeCanvas(c) { c.width = c.offsetWidth; c.height = c.offsetHeight; }
@@ -632,6 +676,98 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     }
   }
 
+  /* ---------- pagina 4: Jarvis ---------- */
+  var J = { state: 'desligado', level: 0, wake: false, conv: [], t0: Date.now(), timer: null };
+  var JSTATE = {
+    desligado: ['Jarvis', 'toque em Falar', [79, 216, 240]],
+    parado: ['Em espera', 'toque em Falar', [79, 216, 240]],
+    ouvindo: ['Ouvindo…', 'fale agora · toque para parar', [60, 255, 138]],
+    transcrevendo: ['Entendendo…', '', [177, 140, 255]],
+    pensando: ['Pensando…', '', [177, 140, 255]],
+    falando: ['Falando…', 'toque para interromper', [79, 216, 240]],
+    erro: ['Erro', '', [255, 77, 77]]
+  };
+  function jbusy() { return J.state === 'ouvindo' || J.state === 'transcrevendo' || J.state === 'pensando' || J.state === 'falando'; }
+  function onJarvis(m) {
+    if (m.ev === 'state') {
+      J.state = m.state; J.wake = !!m.wake;
+      var s = JSTATE[m.state] || [m.state, '', [79, 216, 240]];
+      setText($('jst'), s[0]);
+      setText($('jdet'), m.detail === 'interrompido' ? 'interrompido' : (m.detail || s[1]));
+      $('jst').style.color = 'rgb(' + s[2].join(',') + ')';
+      if (m.model) setText($('jmodel'), m.model.charAt(0).toUpperCase() + m.model.slice(1));
+      if (m.phase) setText($('jphase'), m.phase === 1 ? 'Fase 1 · simulação' : (m.phase === 2 ? 'Fase 2 · repete o que ouviu' : 'Claude Code'));
+      $('jtalk').className = jbusy() ? 'on' : '';
+      setText($('jtalktx'), jbusy() ? 'Parar' : 'Falar');
+      $('jwake').className = J.wake ? 'on' : '';
+      setText($('jwakev'), J.wake ? 'Ligado' : 'Desligado');
+      if (m.state !== 'ouvindo') J.level = 0;
+    } else if (m.ev === 'level') {
+      J.level = m.v || 0;
+    } else if (m.ev === 'heard') {
+      J.conv.push({ you: m.text, jar: '' });
+      if (J.conv.length > 3) J.conv.shift();
+      renderConv();
+    } else if (m.ev === 'reply') {
+      if (!J.conv.length) J.conv.push({ you: '', jar: '' });
+      J.conv[J.conv.length - 1].jar = m.text;
+      renderConv();
+    }
+  }
+  /* escapa texto antes de por em innerHTML (o que o Jarvis ouve/responde nao vira HTML) */
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function renderConv() {
+    var html = '';
+    for (var i = 0; i < J.conv.length; i++) {
+      var c = J.conv[i];
+      if (c.you) html += '<div class="jx"><div class="who">VOCÊ</div><div class="you">' + esc(c.you) + '</div></div>';
+      if (c.jar) html += '<div class="jx"><div class="who">JARVIS</div><div class="jar">' + esc(c.jar) + '</div></div>';
+    }
+    var box = $('jlines'); box.innerHTML = html;
+    box.scrollTop = box.scrollHeight; /* mostra sempre o fim da conversa */
+    while (box.scrollHeight > box.clientHeight + 4 && box.firstChild) box.removeChild(box.firstChild);
+  }
+  /* reator: anima so com a aba visivel (~14 qps); parado = respiracao lenta */
+  function jarvisAnim(on) {
+    if (on && !J.timer) { J.timer = setInterval(drawOrb, 70); drawOrb(); }
+    else if (!on && J.timer) { clearInterval(J.timer); J.timer = null; }
+  }
+  function drawOrb() {
+    var c = $('jorb'), ctx = c.getContext('2d'), w = c.width, h = c.height;
+    if (!w || !h) return;
+    var cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2, t = (Date.now() - J.t0) / 1000;
+    var col = (JSTATE[J.state] || JSTATE.parado)[2], rgb = col.join(',');
+    ctx.clearRect(0, 0, w, h);
+    var pulse = 0.5 + 0.5 * Math.sin(t * 1.6);
+    var core = R * 0.34;
+    if (J.state === 'ouvindo') core = R * (0.30 + 0.16 * J.level);
+    else if (J.state === 'falando') core = R * (0.32 + 0.05 * Math.abs(Math.sin(t * 9)));
+    else core = R * (0.32 + 0.02 * pulse);
+    /* brilho */
+    var g = ctx.createRadialGradient(cx, cy, core * 0.2, cx, cy, R * 0.98);
+    g.addColorStop(0, 'rgba(' + rgb + ',0.55)');
+    g.addColorStop(0.45, 'rgba(' + rgb + ',0.14)');
+    g.addColorStop(1, 'rgba(' + rgb + ',0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R * 0.98, 0, 6.2832); ctx.fill();
+    /* nucleo */
+    ctx.fillStyle = 'rgba(' + rgb + ',0.9)'; ctx.beginPath(); ctx.arc(cx, cy, core * 0.55, 0, 6.2832); ctx.fill();
+    ctx.lineWidth = Math.max(2, R * 0.025); ctx.strokeStyle = 'rgba(' + rgb + ',1)';
+    ctx.beginPath(); ctx.arc(cx, cy, core, 0, 6.2832); ctx.stroke();
+    /* aneis: giram quando pensa; segmentados como um reator */
+    var spin = (J.state === 'pensando' || J.state === 'transcrevendo') ? t * 2.4 : t * 0.25;
+    for (var k = 0; k < 2; k++) {
+      var rr = R * (0.62 + k * 0.2), segs = 6 + k * 4, gap = 0.18;
+      ctx.lineWidth = Math.max(2, R * (0.045 - k * 0.015));
+      ctx.strokeStyle = 'rgba(' + rgb + ',' + (0.85 - k * 0.35) + ')';
+      for (var s = 0; s < segs; s++) {
+        var a0 = (k ? -spin : spin) + s * 6.2832 / segs;
+        ctx.beginPath(); ctx.arc(cx, cy, rr, a0, a0 + 6.2832 / segs - gap); ctx.stroke();
+      }
+    }
+  }
+  tap($('jtalk'), function () { send({ t: 'jarvis', cmd: jbusy() ? 'stop' : 'listen' }); });
+  tap($('jwake'), function () { send({ t: 'jarvis', cmd: 'wake', on: !J.wake }); });
+
   /* ---------- aprovacoes do Claude Code ---------- */
   function onApproval(a) { a.expires = Date.now() + (a.timeout || 100) * 1000; askQueue.push(a); if (!askCur) nextAsk(); }
   function nextAsk() {
@@ -641,6 +777,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     setText($('askcwd'), askCur.cwd || '');
     setText($('askdet'), askCur.detail || '');
     setText($('askh'), (askCur.agent || 'Claude Code') + ' pede permissão' + (askQueue.length ? ' (+' + askQueue.length + ')' : ''));
+    $('askdet').className = askCur.agent === 'Jarvis' ? 'big' : ''; /* pedido do Jarvis: o alvo em letra grande */
     $('ask').style.display = 'block';
   }
   function closeAsk(id) {
@@ -666,6 +803,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     else if (m.t === 'media') onMedia(m);
     else if (m.t === 'claude') onClaude(m);
     else if (m.t === 'procs') onProcs(m);
+    else if (m.t === 'jarvis') onJarvis(m);
     else if (m.t === 'approval') onApproval(m);
     else if (m.t === 'approval_done') closeAsk(m.id);
     else if (m.t === 'toast') toast(m.text);
@@ -683,6 +821,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
   tap($('tab0'), function () { goPage(0, true); });
   tap($('tab1'), function () { goPage(1, true); });
   tap($('tab2'), function () { goPage(2, true); });
+  tap($('tab3'), function () { goPage(3, true); });
   buildProcs();
   tap($('bprev'), function () { send({ t: 'media', cmd: 'prev' }); });
   tap($('bplay'), function () { send({ t: 'media', cmd: 'playpause' }); if (media) { media.playing = !media.playing; setPlayIcon(media.playing); } });

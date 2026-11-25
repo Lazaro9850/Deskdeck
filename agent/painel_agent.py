@@ -21,7 +21,9 @@ import logging
 import logging.handlers
 import os
 import re
+import secrets
 import shutil
+import unicodedata
 import socket
 import subprocess
 import sys
@@ -813,6 +815,87 @@ class TabletLink:
                     time.sleep(3)
 
 
+# ------------------------------------------------------------------- Jarvis
+class JarvisProc:
+    """Processo do Jarvis (jarvis_service.py). Iniciado so quando for usado (tablet na aba Jarvis
+    ou botao "Falar"), para nao gastar nada no PC enquanto ninguem o usa. Eventos vao para o tablet."""
+
+    def __init__(self, on_event):
+        self.on_event = on_event
+        self.proc = None
+        self.conn = None
+        self.lock = threading.Lock()
+        self.last_state = {"ev": "state", "state": "desligado"}
+
+    def running(self):
+        return self.proc is not None and self.proc.poll() is None
+
+    def _start(self):
+        # Comandos vao por um socket local, NAO pelo stdin: no Windows, enquanto uma thread fica
+        # bloqueada lendo o pipe do stdin, o carregamento de DLLs nativas (numpy/OpenBLAS, FFmpeg)
+        # em outra thread trava. Os eventos voltam pelo stdout, que nao tem esse problema.
+        script = os.path.join(HERE, "jarvis_service.py")
+        env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1")
+        srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        srv.bind(("127.0.0.1", 0))
+        srv.listen(1)
+        srv.settimeout(15)
+        token = uuid.uuid4().hex
+        self.proc = subprocess.Popen([sys.executable, script, "--port", str(srv.getsockname()[1]), "--token", token],
+                                     stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                     stderr=open(os.path.join(DATA, "jarvis_stderr.log"), "a"),
+                                     creationflags=NO_WINDOW, env=env,
+                                     text=True, encoding="utf-8", bufsize=1, cwd=HERE)
+        proc = self.proc
+        try:
+            conn, _ = srv.accept()
+            conn.settimeout(5)
+            hello = conn.makefile("r", encoding="utf-8").readline().strip()
+            if hello != token:  # so aceita o processo que acabamos de abrir
+                conn.close()
+                raise OSError("Jarvis: conexao local nao autenticada")
+            conn.settimeout(None)
+            self.conn = conn
+        finally:
+            srv.close()
+
+        def reader():
+            for line in proc.stdout:
+                try:
+                    ev = json.loads(line)
+                except ValueError:
+                    continue
+                if ev.get("ev") == "state":
+                    self.last_state = ev
+                self.on_event(ev)
+            self.last_state = {"ev": "state", "state": "desligado"}
+            self.on_event(self.last_state)
+        threading.Thread(target=reader, name="jarvis-leitor", daemon=True).start()
+        log.info("Jarvis iniciado (PID %s)", proc.pid)
+
+    def send(self, cmd):
+        with self.lock:
+            try:
+                if not self.running():
+                    self._start()
+                self.conn.sendall((json.dumps(cmd) + "\n").encode("utf-8"))
+            except (OSError, ValueError) as e:
+                log.warning("Jarvis: %s", e)
+                if self.proc and self.proc.poll() is None:
+                    self.proc.kill()
+                self.proc = None
+
+    def stop(self):
+        with self.lock:
+            if self.running():
+                try:
+                    self.conn.close()  # o servico sai quando a conexao fecha
+                    self.proc.wait(3)
+                except Exception:  # noqa: BLE001
+                    self.proc.kill()
+            self.proc = None
+
+
 # ------------------------------------------------------------- aprovacoes (hook)
 class Approvals:
     def __init__(self, app):
@@ -826,6 +909,10 @@ class Approvals:
         ti = data.get("tool_input") or {}
         if not isinstance(ti, dict):
             return tool, str(ti)[:900]
+        if tool.startswith("mcp__painel__"):  # acoes do Jarvis: texto amigavel em vez do nome tecnico
+            acao = tool[len("mcp__painel__"):]
+            nomes = {"fechar_app": "Fechar um app"}
+            return nomes.get(acao, acao.replace("_", " ").capitalize()), (ti.get("nome") or json.dumps(ti, ensure_ascii=False))
         for key in ("command", "file_path", "url", "pattern", "query", "path", "prompt", "description"):
             if ti.get(key):
                 txt = str(ti[key])
@@ -845,7 +932,9 @@ class Approvals:
         tool, detail = self.describe(data)
         cwd = data.get("cwd") or ""
         self.app.link.send({"t": "approval", "id": rid, "tool": tool, "detail": detail, "cwd": cwd,
-                            "timeout": timeout, "agent": data.get("agent") or "Claude Code"})
+                            "timeout": timeout,
+                            "agent": "Jarvis" if os.path.basename(cwd.rstrip("\\/")).lower() == "jarvis"
+                            else (data.get("agent") or "Claude Code")})
         log.info("aprovacao %s pedida: %s", rid, tool)
         ev.wait(timeout)
         with self.lock:
@@ -884,7 +973,7 @@ class Handler(BaseHTTPRequestHandler):
         self._json(404, {})
 
     def do_POST(self):
-        if self.path != "/approval":
+        if self.path not in ("/approval", "/jarvis/tool"):
             return self._json(404, {})
         # So aceita chamadas locais e sem cabecalho Origin (bloqueia paginas web).
         if self.headers.get("Origin"):
@@ -894,6 +983,11 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(min(n, 200_000)) or b"{}")
         except ValueError:
             return self._json(400, {})
+        if self.path == "/jarvis/tool":
+            # ferramentas do Jarvis (servidor MCP "painel"): exigem o token desta execucao do agente
+            if not secrets.compare_digest(self.headers.get("X-Painel-Token", ""), self.app.token):
+                return self._json(403, {})
+            return self._json(200, self.app.jarvis_tool(data.get("tool", ""), data.get("args") or {}))
         self._json(200, {"decision": self.app.approvals.request(data)})
 
 
@@ -914,7 +1008,9 @@ class App:
         self.force_ai = threading.Event()
         self.procs = ProcView(self.system)
         self.proc_page = False      # a aba Processos esta aberta no tablet?
-        self.page = 1               # aba aberta no tablet (0 Apps, 1 Painel, 2 Processos); o tablet informa
+        self.page = 1               # aba aberta no tablet (0 Apps, 1 Painel, 2 Processos, 3 Jarvis)
+        self.token = secrets.token_hex(16)  # autoriza as ferramentas do Jarvis (/jarvis/tool)
+        self.jarvis = JarvisProc(lambda ev: self.link.send(dict(ev, t="jarvis")))
         self.force_procs = threading.Event()
         self.buttons = {b["id"]: b for b in cfg.get("buttons", [])}
 
@@ -939,6 +1035,8 @@ class App:
         elif t == "page":
             self.page = m.get("n", 1)
             self.proc_page = self.page == 2
+            if self.page == 3:      # aba Jarvis: inicia o servico (se preciso) e pede o estado atual
+                self.actions.submit(self.jarvis.send, {"cmd": "status"})
             if self.page == 1:      # voltou ao Painel: atualiza musica e Claude na hora
                 self.force_media.set()
                 self.force_ai.set()
@@ -947,6 +1045,10 @@ class App:
         elif t == "procsort":
             self.procs.sort = m.get("key") or "cpu"
             self.force_procs.set()
+        elif t == "jarvis":
+            cmd = {k: v for k, v in m.items() if k != "t"}
+            if cmd.get("cmd") in ("listen", "stop", "wake", "status"):
+                self.actions.submit(self.jarvis.send, cmd)
         elif t == "launch":
             self.actions.submit(self.do_launch, m.get("id"))
         elif t == "ready":
@@ -964,6 +1066,102 @@ class App:
 
     def toast(self, text):
         self.link.send({"t": "toast", "text": text})
+
+    # ---- ferramentas do Jarvis (chamadas pelo servidor MCP "painel" via /jarvis/tool)
+    BUILTIN_APPS = {"calculadora": "calc.exe", "bloco de notas": "notepad.exe", "notas": "notepad.exe",
+                    "explorador": "explorer.exe", "arquivos": "explorer.exe", "gerenciador de tarefas": "taskmgr.exe",
+                    "configuracoes": "ms-settings:", "paint": "mspaint.exe", "prompt": "cmd.exe",
+                    "terminal": "wt.exe"}
+
+    @staticmethod
+    def _norm(s):
+        s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode().lower()
+        return re.sub(r"[^a-z0-9 ]+", " ", s).strip()
+
+    def _find_app(self, nome):
+        """Procura o app pelo nome falado: apps da barra de tarefas primeiro, depois os do Windows."""
+        import difflib
+        n = self._norm(nome)
+        if not n:
+            return None
+        cands = [(self._norm(a["label"]), ("taskbar", a)) for a in self.apps.apps]
+        cands += [(k, ("builtin", v)) for k, v in self.BUILTIN_APPS.items()]
+        for key, val in cands:  # nome contido (ex.: "code" -> "vs code", "discord" -> "discord")
+            if n == key or (len(n) >= 3 and (n in key or key in n)):
+                return val
+        best = difflib.get_close_matches(n, [k for k, _ in cands], n=1, cutoff=0.6)
+        return dict(cands)[best[0]] if best else None
+
+    def jarvis_tool(self, tool, args):
+        try:
+            return {"ok": True, "text": self._jarvis_tool(tool, args)}
+        except Exception as e:  # noqa: BLE001
+            log.warning("ferramenta %s: %s", tool, e)
+            return {"ok": False, "text": "Falhou: %s" % e}
+
+    def _jarvis_tool(self, tool, args):
+        log.info("Jarvis usou a ferramenta %s %s", tool, json.dumps(args, ensure_ascii=False)[:120])
+        if tool == "status_pc":
+            s = getattr(self.system, "last", None) or self.system.snapshot()
+            g, r, d = s.get("gpu") or {}, s.get("ram") or {}, s.get("disk") or {}
+            return ("CPU %s%% (%s); GPU %s%%; RAM %s%% (%.1f de %.1f GB); disco C: %s%% usado, %.0f GB livres." % (
+                round(s.get("cpu") or 0), s.get("cpuname", ""), round(g.get("p") or 0), round(r.get("p") or 0),
+                (r.get("used") or 0) / 2**30, (r.get("total") or 0) / 2**30, round(d.get("p") or 0),
+                (d.get("free") or 0) / 1e9))
+        if tool == "processos":
+            n = max(1, min(10, int(args.get("quantidade") or 5)))
+            self.procs.sort = "mem" if args.get("ordenar_por") == "memoria" else "cpu"
+            p = self.procs.snapshot()
+            if self.page != 2:
+                self.procs.close()
+            return "; ".join("%s: CPU %.1f%%, %.0f MB" % (r["n"], r["cpu"], r["mem"] / 2**20) for r in p["rows"][:n])
+        if tool == "lista_apps":
+            abertos = set(self.apps.running())
+            return "; ".join("%s (%s)" % (a["label"], "aberto" if a["id"] in abertos else "fechado") for a in self.apps.apps)
+        if tool == "abrir_app":
+            hit = self._find_app(args.get("nome", ""))
+            if not hit:
+                return "Não encontrei um app chamado '%s' na barra de tarefas." % args.get("nome", "")
+            kind, val = hit
+            if kind == "taskbar":
+                self.apps.launch(val["id"])
+                return "Abri o %s." % val["label"]
+            os.startfile(val)
+            return "Abri %s." % val
+        if tool == "fechar_app":
+            hit = self._find_app(args.get("nome", ""))
+            exe = (hit[1].get("exe") if hit and hit[0] == "taskbar" else hit[1] if hit else None) or ""
+            exe = {"calc.exe": "CalculatorApp.exe"}.get(exe.lower(), exe)  # apps da loja abrem outro processo
+            if not exe.lower().endswith(".exe"):
+                return "Não sei qual programa fechar para '%s'." % args.get("nome", "")
+            rc, out = run(["taskkill", "/IM", os.path.basename(exe)])  # sem /F: pede para fechar, como o X da janela
+            return ("Pedi para o %s fechar." % os.path.basename(exe)) if rc == 0 else ("Não consegui fechar: %s" % out.strip()[:150])
+        if tool == "midia":
+            acao = args.get("acao", "play_pause")
+            if acao == "estado":
+                i = self.media.info()
+                if not i.get("has"):
+                    return "Nada tocando no momento."
+                return "%s: %s, de %s, no %s." % ("Tocando" if i.get("playing") else "Pausado", i.get("title"),
+                                                   i.get("artist") or "artista desconhecido", i.get("app"))
+            self.do_media({"proxima": "next", "anterior": "prev"}.get(acao, "playpause"))
+            return {"proxima": "Pulei para a próxima.", "anterior": "Voltei para a anterior."}.get(acao, "Play/pause acionado.")
+        if tool == "volume":
+            acao = args.get("acao", "estado")
+            if acao in ("aumentar", "diminuir"):
+                passos = max(1, min(25, int(args.get("passos") or 3)))  # cada passo = 2% no Windows
+                for _ in range(passos):
+                    press_keys(["volume_up" if acao == "aumentar" else "volume_down"])
+                    time.sleep(0.02)
+            elif acao == "mudo":
+                press_keys(["volume_mute"])
+            time.sleep(0.2)
+            st = self.audio.state() or {}
+            return "Volume em %s%%%s." % (st.get("vol", "?"), ", mudo" if st.get("muted") else "")
+        if tool == "recorte_tela":
+            press_keys(["win", "shift", "s"])
+            return "Abri a ferramenta de recorte."
+        raise ValueError("ferramenta desconhecida: %s" % tool)
 
     def do_media(self, cmd):
         self.media.command(cmd)
@@ -1060,6 +1258,8 @@ class App:
             try:
                 if page == 0:
                     self.link.send({"t": "stats", "now": int(t0 * 1000), "running": self.apps.running()})
+                elif page == 3:  # aba Jarvis: so mantem a conexao e o relogio (o Jarvis manda os proprios eventos)
+                    self.link.send({"t": "stats", "now": int(t0 * 1000)})
                 elif page == 1:
                     s = self.system.snapshot()
                     if t0 - last_tog_t > 4:  # estado do audio (botao Mudo) nao precisa ser tao frequente
@@ -1086,7 +1286,7 @@ class App:
                         self.on_connect()
             except Exception:  # noqa: BLE001
                 log.exception("erro no laco de envio")
-            wait = {0: 3.0, 1: interval, 2: 1.4}.get(page, 2.0)
+            wait = {0: 3.0, 1: interval, 2: 1.4, 3: 3.0}.get(page, 2.0)
             time.sleep(max(0.2, wait - (time.time() - t0)))
 
     def media_watch(self):
@@ -1127,6 +1327,9 @@ def main():
         return 1
     app = App(cfg)
     Handler.app = app
+    # token das ferramentas do Jarvis: novo a cada execucao, legivel so pela pasta de dados do usuario
+    with open(os.path.join(DATA, "agent_token"), "w", encoding="ascii") as f:
+        f.write(app.token)
     log.info("Painel PC iniciado. adb=%s", app.link.adb)
     threading.Thread(target=srv.serve_forever, name="http", daemon=True).start()
     threading.Thread(target=app.link.loop, name="link", daemon=True).start()

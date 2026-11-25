@@ -124,6 +124,45 @@ Para receber os **pedidos de permissão** do Claude Code no tablet e gravar os l
 .\install_claude_integration.ps1 -Uninstall
 ```
 
+## Jarvis: assistente de voz (em desenvolvimento)
+
+A 4ª aba do tablet é o **Jarvis**: um reator animado que mostra o estado (em espera, ouvindo, pensando, falando),
+a conversa e um botão grande **Falar/Parar**. O plano completo está em [docs/PLANO-JARVIS.md](docs/PLANO-JARVIS.md).
+
+| Fase | Situação |
+|---|---|
+| 1. Aba e serviço | ✅ |
+| 2. Ouvir e falar de verdade | ✅ microfone do PC + **Whisper small** (fala → texto) + **Kokoro** (voz PT-BR), tudo local |
+| 3. Cérebro (Claude Code) | ✅ pela sua assinatura do Claude Code (sem chave de API): Haiku para pedidos rápidos, Sonnet para os complexos; pesquisa na web; lembra da conversa por 10 min |
+| 4. Ações no PC (MCP) | ✅ abrir e fechar apps, música, volume, recorte, estado do PC e processos; **fechar app pede Permitir/Negar no tablet** |
+| 5. "Hey Jarvis" e modo jogo · 6. Acabamento | planejadas |
+
+**O que dá para pedir:** "abre o Discord", "pausa a música", "próxima", "aumenta o volume", "tira um print",
+"como está o PC?", "o que está pesando agora?", "fecha o Paint" (pede confirmação no tablet), além de perguntas
+em geral, contas e pesquisas (clima, notícias…).
+
+As ações passam pelo servidor MCP `agent/mcp_painel.py`, que só repassa pedidos ao agente do painel por
+127.0.0.1 com um token renovado a cada execução. O Jarvis não tem acesso a terminal, arquivos ou instalação
+de programas.
+
+As respostas usam o **limite do seu plano** (o mesmo das barras da aba Painel). Uma pergunta simples no Haiku gasta muito pouco.
+
+```powershell
+.\install_pc.ps1 -Jarvis   # libs de voz (~320 MB) e modelos (~800 MB, SHA-256 conferido)
+```
+
+* O Jarvis roda num processo separado, aberto só quando a aba é usada. Parado, ele ocupa ~10 MB.
+  Com os modelos carregados, ocupa ~750 MB, e eles saem da memória depois de 5 min sem uso.
+* O áudio é processado **no PC**: nada de voz sai do computador. Só o **texto** do pedido vai para o Claude Code.
+* Opções em `config.json`, bloco `"jarvis"`:
+
+```json
+"jarvis": { "mic": "AB13X", "voice": "pf_dora", "speed": 1.05 }
+```
+
+  `mic` é parte do nome do microfone; se ficar vazio, ele usa o padrão do Windows, ou o headset se o padrão for virtual (DroidCam etc.).
+  `voice` aceita `pf_dora` (feminina), `pm_alex` ou `pm_santa` (masculinas).
+
 ## Deixar o tablet leve (opcional, para tablets dedicados)
 
 Se o aparelho vai servir **só** de painel, o `tablet\enxugar_tablet.ps1` desativa tudo que não é essencial:
