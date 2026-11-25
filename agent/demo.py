@@ -158,21 +158,21 @@ class FakeJarvis:
     """Encena o Jarvis na aba do tablet: estado, nivel do microfone, transcricao e resposta."""
 
     def __init__(self, app):
-        self.app, self.n, self.busy, self.wake = app, 2, threading.Event(), True  # 1a cena: pergunta nova
+        self.app, self.n, self.busy, self.claps = app, 2, threading.Event(), True  # 1a cena: pergunta nova
 
     def emit(self, **ev):
         self.app.link.send(dict(ev, t="jarvis"))
 
     def state(self, st, **extra):
-        self.emit(ev="state", state=st, wake=self.wake, model="haiku", game=False, phase=6, **extra)
+        self.emit(ev="state", state=st, claps=self.claps, model="haiku", game=False, phase=6, **extra)
 
     def send(self, cmd):
         c = cmd.get("cmd")
         if c == "status":
             self.state("parado")
             self.emit(ev="history", items=[{"you": y, "jar": j} for y, j in CONVERSAS[:2]])
-        elif c == "wake":
-            self.wake = bool(cmd.get("on", not self.wake))
+        elif c == "claps":
+            self.claps = bool(cmd.get("on", not self.claps))
             self.state("parado")
         elif c == "listen" and not self.busy.is_set():
             threading.Thread(target=self._scene, daemon=True).start()

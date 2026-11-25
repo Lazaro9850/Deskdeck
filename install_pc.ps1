@@ -54,8 +54,6 @@ foreach ($f in 'painel_agent.py','jarvis_service.py','palmas.py','demo.py','jarv
 if ($Jarvis) {
   Write-Host "Jarvis: instalando bibliotecas de voz em $root\libs-jarvis ..."
   & $py -m pip install --disable-pip-version-check -q --upgrade --target "$root\libs-jarvis" -r "$here\agent\requirements-jarvis.txt"
-  # openWakeWord sem dependencias: as que ele pede a mais (scipy, scikit-learn) so servem para treinar modelos
-  & $py -m pip install --disable-pip-version-check -q --upgrade --target "$root\libs-jarvis" --no-deps openwakeword
   Write-Host "Jarvis: baixando modelos em $root\models (Whisper small + Kokoro) ..."
   & $py "$dest\jarvis_models.py" "$root\models"
   if ($LASTEXITCODE) { Write-Warning 'Jarvis: falha ao baixar ou conferir os modelos.' }

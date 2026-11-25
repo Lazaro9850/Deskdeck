@@ -91,3 +91,6 @@ ganhar visibilidade, vale considerar um nome próprio (ex.: "DeskDeck", "PainelP
 - **Ajuste anti-alarme falso** ✅ assobios e fala rápida ("oi oi oi oi oi") contavam como palmas. Agora cada estalo só
   conta se **cair ≥ 10 dB em 40 ms** e tiver som de **chiado** (flatness ≥ 0,01): assobio e voz são tonais e se
   sustentam. Gravação de falsos: 0 palmas aceitas em assobios e fala (antes até 7); palmas: 8 de 8 sequências mantidas.
+- **Decisão (25/11):** o "Oh Jarvis" (B1/B2) foi cancelado e o **"Hey Jarvis" foi removido**: o Jarvis abre só
+  com **5 palmas** ou pelo botão Falar. Saíram o openWakeWord, os modelos de wake word e a interrupção por voz
+  (o botão Parar interrompe). Escutando, o Jarvis caiu de ~125 MB para ~35 MB.

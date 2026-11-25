@@ -14,8 +14,8 @@ a conversa e um botão grande **Falar/Parar**. O plano de implantação está em
 | 2. Ouvir e falar de verdade | ✅ microfone do PC + **Whisper small** (fala → texto) + **Kokoro** (voz PT-BR), tudo local |
 | 3. Cérebro (Claude Code) | ✅ pela sua assinatura do Claude Code (sem chave de API): Haiku para pedidos rápidos, Sonnet para os complexos; pesquisa na web; lembra da conversa por 10 min |
 | 4. Ações no PC (MCP) | ✅ abrir e fechar apps, música, volume, recorte, estado do PC e processos; **fechar app pede Permitir/Negar no tablet** |
-| 5. "Hey Jarvis" e modo jogo | ✅ diga **"Hey Jarvis"** (pronúncia em inglês) e ele responde com um bipe; com um jogo ou vídeo em tela cheia, a escuta pausa sozinha e os modelos de voz saem da memória |
-| 6. Acabamento | ✅ **"Hey Jarvis" no meio da fala interrompe** e ele volta a ouvir; "para", "chega" ou "obrigado" encerram sem gastar o plano; histórico das últimas conversas salvo no PC |
+| 5. Chamar sem tocar e modo jogo | ✅ bata **5 palmas** e ele responde com um bipe; com um jogo ou vídeo em tela cheia, a escuta pausa sozinha e os modelos de voz saem da memória |
+| 6. Acabamento | ✅ o botão **Parar** interrompe a fala; "para", "chega" ou "obrigado" encerram sem gastar o plano; histórico das últimas conversas salvo no PC |
 
 **O que dá para pedir:** "abre o Discord", "pausa a música", "próxima", "aumenta o volume", "tira um print",
 "como está o PC?", "o que está pesando agora?", "fecha o Paint" (pede confirmação no tablet), além de perguntas
@@ -31,29 +31,31 @@ As respostas usam o **limite do seu plano** (o mesmo das barras da aba Painel). 
 .\install_pc.ps1 -Jarvis   # libs de voz (~320 MB) e modelos (~800 MB, SHA-256 conferido)
 ```
 
-* **"Hey Jarvis"**: ligue na chave da aba Jarvis (fica salvo). Escutando, gasta ~4% de um núcleo (~0,3% de um Ryzen 5 5600G) e ~125 MB; em **modo jogo** a escuta pausa e o custo vai a zero. O botão Falar funciona sempre.
-* O Jarvis roda num processo separado, aberto só quando a aba é usada (ou no login, se o "Hey Jarvis" estiver ligado). Parado, ele ocupa ~10 MB.
+* **5 palmas**: ligue na chave "5 PALMAS" da aba Jarvis (fica salvo). Enquanto você bate, o tablet mostra "palmas: 3 de 5".
+  A escuta não usa IA: um estalo só conta se o volume subir de uma vez, cair em menos de 40 ms e tiver som de "chiado".
+  Assim, assobio, fala e teclado não contam. Gasta ~0,15% de um núcleo e ~35 MB; em **modo jogo** pausa sozinha.
+  O botão Falar funciona sempre.
+* O Jarvis roda num processo separado, aberto só quando a aba é usada (ou no login, se as palmas estiverem ligadas).
   Com os modelos carregados, ocupa ~750 MB, e eles saem da memória depois de 5 min sem uso.
 * O áudio é processado **no PC**: nada de voz sai do computador. Só o **texto** do pedido vai para o Claude Code.
 * Opções em `config.json`, bloco `"jarvis"`:
 
 ```json
-"jarvis": { "mic": "AB13X", "voice": "pf_dora", "speed": 1.05, "wake_threshold": 0.5,
-            "game_mode": true, "barge_in": true, "model": "" }
+"jarvis": { "mic": "AB13X", "voice": "pf_dora", "speed": 1.05, "game_mode": true, "model": "",
+            "claps": 5, "clap_rise": 25, "clap_level": -36, "clap_decay": 10, "clap_flat": 0.01 }
 ```
 
   `mic` é parte do nome do microfone; se ficar vazio, ele usa o padrão do Windows, ou o headset se o padrão for virtual (DroidCam etc.).
   `voice` aceita `pf_dora` (feminina), `pm_alex` ou `pm_santa` (masculinas).
-  `wake_threshold`: sensibilidade do "Hey Jarvis" (menor = dispara mais fácil; padrão 0,5).
   `game_mode`: pausar a escuta com app em tela cheia (padrão `true`).
-  `barge_in`: dizer "Hey Jarvis" enquanto ele fala o interrompe (padrão `true`; com caixas de som em vez de
-  headset, desligue se ele se interromper sozinho).
   `model`: fixa o modelo (`haiku` ou `sonnet`); vazio = escolhe pelo pedido.
+  `claps`: quantas palmas abrem o Jarvis (padrão 5). Se algo ainda disparar por engano, aumente `clap_decay`
+  (queda mínima em 40 ms, em dB) ou `clap_flat` (quanto "chiado" o som precisa ter); se suas palmas não
+  forem reconhecidas, diminua `clap_rise` ou `clap_level`.
 
 **Arquivos locais do Jarvis** (em `%USERPROFILE%\PainelPC\data`): `jarvis.log` (diagnóstico),
-`jarvis_historico.json` (últimas 20 conversas, só no seu PC) e `jarvis_state.json` (se o "Hey Jarvis" está ligado).
+`jarvis_historico.json` (últimas 20 conversas, só no seu PC) e `jarvis_state.json` (se as palmas estão ligadas).
 A personalidade fica em `agent/jarvis_persona.md`; a pasta de trabalho do Claude Code do Jarvis é `%USERPROFILE%\Jarvis`.
 
-**Consumo medido** (Ryzen 5 5600G, tudo ligado, incluindo o "Hey Jarvis" escutando): ~0,35% de CPU e ~200 MB de RAM.
-Sem o "Hey Jarvis", ~70 MB. Durante uma conversa, os modelos de voz ocupam ~750 MB e saem da memória após 5 min parados
+**Consumo medido** (Ryzen 5 5600G, painel + Jarvis escutando as palmas): ~90 MB de RAM no total. Durante uma conversa, os modelos de voz ocupam ~750 MB e saem da memória após 5 min parados
 ou na hora em que um jogo entra em tela cheia.
