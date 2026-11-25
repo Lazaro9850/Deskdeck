@@ -37,7 +37,7 @@ for _p in (os.path.join(ROOT, "libs-jarvis"), os.path.join(ROOT, "libs")):
     if os.path.isdir(_p):
         sys.path.insert(0, _p)
 MODELS = os.path.join(ROOT, "models")
-PHASE = 5
+PHASE = 6
 VIRTUAL_MICS = re.compile(r"droidcam|virtual|cable|stereo mix|mixagem|voicemeeter|nvidia broadcast|iriun", re.I)
 
 
@@ -74,7 +74,7 @@ def load_cfg():
         c = {}
     d = {"mic": "", "voice": "pf_dora", "speed": 1.05, "threads": 4, "unload_after": 300,
          "max_listen": 15, "silence_end": 0.9, "no_speech_timeout": 7,
-         "wake_threshold": 0.5, "game_mode": True}
+         "wake_threshold": 0.5, "game_mode": True, "barge_in": True}
     d.update(c)
     return d
 
@@ -212,42 +212,98 @@ class Jarvis:
             self.set_state(self.state)
         elif cmd == "status":
             self.set_state(self.state)
+            if not hasattr(self, "history"):
+                self.history = self._load_history()
+            # ultimas trocas para o tablet (que pode ter sido reiniciado)
+            self.emit(ev="history", items=[{"you": h["you"], "jar": h["jar"]} for h in self.history[-3:]])
 
     # ------------------------------------------------------------- uma interacao
+    STOP_WORDS = re.compile(r"^(ei |hey )?(jarvis[,.!]? *)?(para|pare|parar|chega|cancela|cancelar|sil[eê]ncio|"
+                            r"esquece|deixa pra l[aá]|nada|obrigad[oa]|valeu)[.!]*$", re.I)
+
     def run_turn(self):
+        """Uma interacao. Se voce disser "Hey Jarvis" enquanto ele fala, ele para e escuta de novo."""
         self.last_use = time.time()
+        while True:
+            self._barge = False
+            try:
+                self._one_turn()
+                return
+            except Cancelled:
+                if self._barge and not getattr(self, "_fake", None):
+                    log("interrompido por \"Hey Jarvis\": ouvindo de novo")
+                    self._chime()
+                    self.cancel.clear()
+                    continue  # nova interacao, ja ouvindo
+                self.set_state("parado", detail="interrompido")
+                return
+            except NoSpeech as e:
+                self.set_state("parado", detail=str(e) or "não ouvi nada")
+                return
+            except Exception as e:  # noqa: BLE001
+                import traceback
+                log("erro na interacao: %s", traceback.format_exc())
+                self.set_state("erro", detail=str(e)[:200])
+                time.sleep(3)
+                self.set_state("parado")
+                return
+            finally:
+                self.last_use = time.time()
+
+    def _one_turn(self):
+        self.set_state("ouvindo")
+        # Bibliotecas do microfone antes de carregar o Whisper em paralelo (evita duas threads
+        # carregando DLLs nativas ao mesmo tempo).
+        with IMPORT_LOCK:
+            import numpy  # noqa: F401
+            import sounddevice  # noqa: F401
+        threading.Thread(target=self._load_whisper, daemon=True).start()  # carrega enquanto voce fala
+        audio = self.capture()
+        self.set_state("transcrevendo")
+        text = self.transcribe(audio)
+        self.emit(ev="heard", text=text)
+        if self.STOP_WORDS.match(text.strip()):  # "para", "chega", "obrigado"...: encerra sem perguntar ao Claude
+            self.remember(text, "")
+            self.set_state("parado", detail="ok")
+            return
+        self.remember(text, None)
+        self.model = self.pick_model(text)
+        self.set_state("pensando")
+        # o Claude responde em streaming; cada frase completa ja vai para a voz
+        frases = queue.Queue()
+        threading.Thread(target=self._think_to_queue, args=(text, frases), name="jarvis-cerebro",
+                         daemon=True).start()
+        self.speak_queue(frases)
+        self.set_state("parado")
+
+    # ------------------------------------------------------------- historico
+    HISTORY_FILE = os.path.join(ROOT, "data", "jarvis_historico.json")
+
+    def remember(self, you, jar):
+        """Guarda as ultimas conversas (no PC, em data\\jarvis_historico.json) para o tablet mostrar."""
+        if not hasattr(self, "history"):
+            self.history = self._load_history()
+        if you is None:  # resposta do ultimo pedido (fala sem pedido antes nao entra no historico)
+            if not self.history or self.history[-1]["jar"]:
+                return
+            self.history[-1]["jar"] = jar
+        elif jar is None:  # pedido novo; a resposta chega depois
+            self.history.append({"you": you, "jar": "", "t": int(time.time())})
+        else:
+            self.history.append({"you": you, "jar": jar, "t": int(time.time())})
+        self.history = self.history[-20:]
         try:
-            self.set_state("ouvindo")
-            # Bibliotecas do microfone antes de carregar o Whisper em paralelo (evita duas threads
-            # carregando DLLs nativas ao mesmo tempo).
-            with IMPORT_LOCK:
-                import numpy  # noqa: F401
-                import sounddevice  # noqa: F401
-            threading.Thread(target=self._load_whisper, daemon=True).start()  # carrega enquanto voce fala
-            audio = self.capture()
-            self.set_state("transcrevendo")
-            text = self.transcribe(audio)
-            self.emit(ev="heard", text=text)
-            self.model = self.pick_model(text)
-            self.set_state("pensando")
-            # o Claude responde em streaming; cada frase completa ja vai para a voz
-            frases = queue.Queue()
-            threading.Thread(target=self._think_to_queue, args=(text, frases), name="jarvis-cerebro",
-                             daemon=True).start()
-            self.speak_queue(frases)
-            self.set_state("parado")
-        except Cancelled:
-            self.set_state("parado", detail="interrompido")
-        except NoSpeech as e:
-            self.set_state("parado", detail=str(e) or "não ouvi nada")
-        except Exception as e:  # noqa: BLE001
-            import traceback
-            log("erro na interacao: %s", traceback.format_exc())
-            self.set_state("erro", detail=str(e)[:200])
-            time.sleep(3)
-            self.set_state("parado")
-        finally:
-            self.last_use = time.time()
+            with open(self.HISTORY_FILE, "w", encoding="utf-8") as f:
+                json.dump(self.history, f, ensure_ascii=False)
+        except OSError:
+            pass
+
+    def _load_history(self):
+        try:
+            with open(self.HISTORY_FILE, encoding="utf-8") as f:
+                return json.load(f)[-20:]
+        except (OSError, ValueError):
+            return []
 
     # ------------------------------------------------------------- ouvido
     def _mic(self):
@@ -551,30 +607,65 @@ class Jarvis:
 
         threading.Thread(target=producer, name="jarvis-voz", daemon=True).start()
         said = []
-        while True:
-            self.check()
-            try:
-                item = ready.get(timeout=0.2)
-            except queue.Empty:
-                continue
-            if item is None:
-                break
-            if isinstance(item, Exception):
-                raise item
-            p, audio, sr = item
-            if not said:
-                self.set_state("falando")
-            said.append(p)
-            self.emit(ev="reply", text=" ".join(said), final=False)
-            sd.play(audio, sr)
-            end = time.time() + len(audio) / float(sr) + 0.05
-            while time.time() < end:
-                if self.cancel.wait(0.05):
-                    sd.stop()
-                    raise Cancelled()
-        if said:
-            self.emit(ev="reply", text=" ".join(said), final=True)
-        self.last_use = time.time()
+        barge_stop = threading.Event()
+        try:
+            while True:
+                self.check()
+                try:
+                    item = ready.get(timeout=0.2)
+                except queue.Empty:
+                    continue
+                if item is None:
+                    break
+                if isinstance(item, Exception):
+                    raise item
+                p, audio, sr = item
+                if not said:
+                    self.set_state("falando")
+                    if self.cfg.get("barge_in", True) and not self.game:  # "Hey Jarvis" interrompe a fala
+                        threading.Thread(target=self._barge_listen, args=(barge_stop,), name="jarvis-interromper",
+                                         daemon=True).start()
+                said.append(p)
+                self.emit(ev="reply", text=" ".join(said), final=False)
+                sd.play(audio, sr)
+                end = time.time() + len(audio) / float(sr) + 0.05
+                while time.time() < end:
+                    if self.cancel.wait(0.05):
+                        sd.stop()
+                        raise Cancelled()
+            if said:
+                self.emit(ev="reply", text=" ".join(said), final=True)
+        finally:
+            barge_stop.set()
+            if said:
+                self.remember(None, " ".join(said))  # guarda o que foi dito (mesmo se interrompido)
+            self.last_use = time.time()
+
+    def _barge_listen(self, stop):
+        """Enquanto o Jarvis fala: se ouvir "Hey Jarvis", corta a fala e volta a escutar (ver run_turn)."""
+        try:
+            with IMPORT_LOCK:
+                import sounddevice as sd
+            m = self._load_wake()
+            m.reset()
+            q = queue.Queue()
+            thr = float(self.cfg["wake_threshold"])
+            with sd.InputStream(device=self._mic(), samplerate=16000, channels=1, dtype="int16", blocksize=1280,
+                                callback=lambda d, f, t, s: q.put(d[:, 0].copy())):
+                while not stop.is_set() and not self.cancel.is_set():
+                    try:
+                        b = q.get(timeout=0.3)
+                    except queue.Empty:
+                        continue
+                    score = m.predict(b).get("hey_jarvis_v0.1", 0.0)
+                    if score >= thr:
+                        log("\"Hey Jarvis\" durante a fala (%.2f): interrompendo", score)
+                        self._barge = True
+                        self.cancel.set()
+                        sd.stop()
+                        return
+        except Exception as e:  # noqa: BLE001
+            log("interromper por voz: %s", e)
 
     # ------------------------------------------------------------- "Hey Jarvis"
     def _load_wake(self):

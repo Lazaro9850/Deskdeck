@@ -1,5 +1,8 @@
 # Plano: aba "Jarvis" no SteamDeck
 
+> **Situação:** as 6 fases foram implementadas (branch `feat/jarvis-fase-1`). Decisões tomadas: voz Kokoro `pf_dora`,
+> microfone do headset, "Hey Jarvis" opcional (chave na aba), Haiku/Sonnet por tipo de pedido. Detalhes de uso no README.
+
 ## Objetivo
 
 Criar um assistente de voz no PC, no estilo Jarvis, que usa o **Claude Code** (a assinatura que você já tem) como cérebro e

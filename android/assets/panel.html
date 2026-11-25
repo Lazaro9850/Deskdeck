@@ -703,7 +703,10 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
       $('jwake').className = J.wake ? 'on' : '';
       setText($('jwakev'), J.wake ? (m.game ? 'Pausado' : 'Ligado') : 'Desligado');
       $('jgame').style.display = m.game ? 'inline-block' : 'none';
+      $('jwakev').style.color = (J.wake && m.game) ? '#ffc233' : '';
       if (m.state !== 'ouvindo') J.level = 0;
+    } else if (m.ev === 'history') {
+      if (!J.conv.length && m.items && m.items.length) { J.conv = m.items.slice(-3); renderConv(); }
     } else if (m.ev === 'level') {
       J.level = m.v || 0;
     } else if (m.ev === 'heard') {
