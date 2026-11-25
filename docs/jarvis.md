@@ -31,11 +31,12 @@ As respostas usam o **limite do seu plano** (o mesmo das barras da aba Painel). 
 .\install_pc.ps1 -Jarvis   # libs de voz (~320 MB) e modelos (~800 MB, SHA-256 conferido)
 ```
 
-* **5 palmas**: ligue na chave "5 PALMAS" da aba Jarvis (fica salvo). Enquanto você bate, o tablet mostra "palmas: 3 de 5".
+* **5 palmas**: ligue na chave "5 PALMAS" da aba Jarvis (fica salvo). Funciona com a aba Jarvis aberta no tablet. Enquanto você bate, o tablet mostra "palmas: 3 de 5".
   A escuta não usa IA: um estalo só conta se o volume subir de uma vez, cair em menos de 40 ms e tiver som de "chiado".
   Assim, assobio, fala e teclado não contam. Gasta ~0,15% de um núcleo e ~35 MB; em **modo jogo** pausa sozinha.
   O botão Falar funciona sempre.
-* O Jarvis roda num processo separado, aberto só quando a aba é usada (ou no login, se as palmas estiverem ligadas).
+* O Jarvis roda num processo separado que **só existe com a aba Jarvis aberta**: abre ao entrar na aba e fecha 5 s depois
+  de sair dela. Se você trocar de aba no meio de uma resposta, ele termina de falar e então fecha. Nas outras abas, gasta zero.
   Com os modelos carregados, ocupa ~750 MB, e eles saem da memória depois de 5 min sem uso.
 * O áudio é processado **no PC**: nada de voz sai do computador. Só o **texto** do pedido vai para o Claude Code.
 * Opções em `config.json`, bloco `"jarvis"`:
@@ -57,5 +58,5 @@ As respostas usam o **limite do seu plano** (o mesmo das barras da aba Painel). 
 `jarvis_historico.json` (últimas 20 conversas, só no seu PC) e `jarvis_state.json` (se as palmas estão ligadas).
 A personalidade fica em `agent/jarvis_persona.md`; a pasta de trabalho do Claude Code do Jarvis é `%USERPROFILE%\Jarvis`.
 
-**Consumo medido** (Ryzen 5 5600G, painel + Jarvis escutando as palmas): ~90 MB de RAM no total. Durante uma conversa, os modelos de voz ocupam ~750 MB e saem da memória após 5 min parados
+**Consumo medido** (Ryzen 5 5600G): ~90 MB de RAM no total com a aba Jarvis aberta escutando as palmas; nas outras abas, só o painel (~55 MB). Durante uma conversa, os modelos de voz ocupam ~750 MB e saem da memória após 5 min parados
 ou na hora em que um jogo entra em tela cheia.

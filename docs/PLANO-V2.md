@@ -94,3 +94,5 @@ ganhar visibilidade, vale considerar um nome próprio (ex.: "DeskDeck", "PainelP
 - **Decisão (25/11):** o "Oh Jarvis" (B1/B2) foi cancelado e o **"Hey Jarvis" foi removido**: o Jarvis abre só
   com **5 palmas** ou pelo botão Falar. Saíram o openWakeWord, os modelos de wake word e a interrupção por voz
   (o botão Parar interrompe). Escutando, o Jarvis caiu de ~125 MB para ~35 MB.
+- **Jarvis só com a aba aberta (25/11):** o processo do Jarvis abre ao entrar na aba Jarvis e fecha 5 s depois de sair
+  (terminando antes a conversa em andamento). Nas outras abas, o Jarvis não gasta nada; não inicia mais no login.

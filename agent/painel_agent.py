@@ -817,8 +817,9 @@ class TabletLink:
 
 # ------------------------------------------------------------------- Jarvis
 class JarvisProc:
-    """Processo do Jarvis (jarvis_service.py). Iniciado so quando for usado (tablet na aba Jarvis
-    ou botao "Falar"), para nao gastar nada no PC enquanto ninguem o usa. Eventos vao para o tablet."""
+    """Processo do Jarvis (jarvis_service.py). So existe com a aba Jarvis aberta no tablet: abre ao entrar
+    na aba e fecha alguns segundos depois de sair dela (terminando antes a conversa em andamento).
+    Fora da aba, o Jarvis nao gasta nada no PC. Eventos vao para o tablet."""
 
     def __init__(self, on_event):
         self.on_event = on_event
@@ -1010,7 +1011,7 @@ class App:
         self.proc_page = False      # a aba Processos esta aberta no tablet?
         self.page = 1               # aba aberta no tablet (0 Apps, 1 Painel, 2 Processos, 3 Jarvis)
         self.token = secrets.token_hex(16)  # autoriza as ferramentas do Jarvis (/jarvis/tool)
-        self.jarvis = JarvisProc(lambda ev: self.link.send(dict(ev, t="jarvis")))
+        self.jarvis = JarvisProc(self.on_jarvis_event)
         self.force_procs = threading.Event()
         self.buttons = {b["id"]: b for b in cfg.get("buttons", [])}
 
@@ -1037,6 +1038,8 @@ class App:
             self.proc_page = self.page == 2
             if self.page == 3:      # aba Jarvis: inicia o servico (se preciso) e pede o estado atual
                 self.actions.submit(self.jarvis.send, {"cmd": "status"})
+            else:                   # saiu da aba: o Jarvis fecha (depois de terminar a conversa, se houver)
+                self.jarvis_leave()
             if self.page == 1:      # voltou ao Painel: atualiza musica e Claude na hora
                 self.force_media.set()
                 self.force_ai.set()
@@ -1053,6 +1056,24 @@ class App:
             self.actions.submit(self.do_launch, m.get("id"))
         elif t == "ready":
             log.info("tablet pronto: tela %sx%s", m.get("w"), m.get("h"))
+
+    # ---- Jarvis so com a aba aberta
+    JARVIS_IDLE = ("parado", "erro", "desligado")
+
+    def on_jarvis_event(self, ev):
+        self.link.send(dict(ev, t="jarvis"))
+        if ev.get("ev") == "state" and ev.get("state") in ("parado", "erro") and self.page != 3:
+            self.jarvis_leave()  # terminou a conversa com outra aba aberta
+
+    def jarvis_leave(self, delay=5.0):
+        """Fecha o Jarvis se a aba continuar fechada por alguns segundos (troca rapida de aba nao reinicia)."""
+        def check():
+            if self.page != 3 and self.jarvis.running() and                     self.jarvis.last_state.get("state") in self.JARVIS_IDLE:
+                log.info("aba Jarvis fechada: encerrando o Jarvis")
+                self.jarvis.stop()
+        t = threading.Timer(delay, check)
+        t.daemon = True
+        t.start()
 
     def do_launch(self, aid):
         try:
@@ -1339,15 +1360,6 @@ def main():
     # token das ferramentas do Jarvis: novo a cada execucao, legivel so pela pasta de dados do usuario
     with open(os.path.join(DATA, "agent_token"), "w", encoding="ascii") as f:
         f.write(app.token)
-    # palmas ligadas: o servico precisa estar rodando desde o inicio para escutar
-    try:
-        with open(os.path.join(DATA, "jarvis_state.json"), encoding="utf-8") as f:
-            st = json.load(f)
-            if st.get("claps"):
-                app.actions.submit(app.jarvis.send, {"cmd": "status"})
-                log.info("palmas ligadas: iniciando o Jarvis")
-    except (OSError, ValueError):
-        pass
     log.info("Painel PC iniciado. adb=%s", app.link.adb)
     threading.Thread(target=srv.serve_forever, name="http", daemon=True).start()
     threading.Thread(target=app.link.loop, name="link", daemon=True).start()

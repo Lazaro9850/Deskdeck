@@ -21,7 +21,7 @@
 | <img src="docs/img/aba-apps.png" width="400"> | **Apps**: os apps fixados na sua barra de tarefas, com os ícones reais. Um toque abre no PC; um traço marca os que estão abertos. |
 | <img src="docs/img/aba-painel.png" width="400"> | **Painel**: CPU, GPU, RAM, disco e rede em tempo real · música tocando com controles · uso do **Claude Code** (sessão e semanal) · botões de volume, mudo e recorte. |
 | <img src="docs/img/aba-processos.png" width="400"> | **Processos**: os 7 programas que mais pesam, como no Gerenciador de Tarefas. Toque no cabeçalho para ordenar. |
-| <img src="docs/img/jarvis.gif" width="400"> | **Jarvis**: assistente de voz em português. Bata **5 palmas** ou toque em Falar: ele abre apps, controla música e volume, tira print, diz o que está pesando no PC e responde perguntas usando o Claude Code. |
+| <img src="docs/img/jarvis.gif" width="400"> | **Jarvis**: assistente de voz em português. Com a aba aberta, bata **5 palmas** ou toque em Falar: ele abre apps, controla música e volume, tira print, diz o que está pesando no PC e responde perguntas usando o Claude Code. |
 
 E também: tela cheia de verdade (cobre a barra do Android), inicia sozinho com o tablet e com o Windows, pede
 **Permitir/Negar** no tablet antes de ações sensíveis, e pausa a escuta do Jarvis quando um jogo está em tela cheia.
@@ -31,7 +31,8 @@ E também: tela cheia de verdade (cobre a barra do Android), inicia sozinho com 
 | | CPU | RAM |
 |---|---|---|
 | Painel ligado (abas Apps/Painel) | ~0,01% | ~70 MB |
-| Com as 5 palmas escutando | ~0,15% de um núcleo | ~90 MB |
+| Aba Jarvis aberta (escutando as palmas) | ~0,15% de um núcleo | ~90 MB |
+| Qualquer outra aba | o Jarvis fica fechado | 0 |
 | Durante um jogo em tela cheia | escuta pausada, modelos de voz fora da memória | |
 
 <sub>Medido num Ryzen 5 5600G. O agente só coleta o que a aba aberta no tablet mostra; com o tablet desconectado, não coleta nada.</sub>
