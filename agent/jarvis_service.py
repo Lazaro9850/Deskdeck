@@ -72,7 +72,7 @@ def load_cfg():
             c = json.load(f).get("jarvis") or {}
     except (OSError, ValueError):
         c = {}
-    d = {"mic": "", "voice": "pf_dora", "speed": 1.05, "threads": 4, "unload_after": 300,
+    d = {"mic": "", "voice": "pm_alex", "voice_fx": 0.5, "speed": 1.05, "threads": 4, "unload_after": 300,
          "max_listen": 15, "silence_end": 0.9, "no_speech_timeout": 7,
          "game_mode": True,
          "claps": 5, "clap_rise": 25, "clap_level": -36, "clap_decay": 10, "clap_flat": 0.01}
@@ -605,6 +605,10 @@ class Jarvis:
                 try:
                     audio, sr = kokoro.create(falar, voice=self.cfg["voice"], speed=float(self.cfg["speed"]),
                                               lang="pt-br")
+                    fx = float(self.cfg.get("voice_fx") or 0)
+                    if fx > 0:  # "voz de IA": sala curta + toque eletronico (voz_fx.py)
+                        import voz_fx
+                        audio = voz_fx.apply(audio, sr, fx)
                 except Exception as e:  # noqa: BLE001
                     ready.put(e)
                     return

@@ -42,12 +42,13 @@ As respostas usam o **limite do seu plano** (o mesmo das barras da aba Painel). 
 * Opções em `config.json`, bloco `"jarvis"`:
 
 ```json
-"jarvis": { "mic": "AB13X", "voice": "pf_dora", "speed": 1.05, "game_mode": true, "model": "",
+"jarvis": { "mic": "AB13X", "voice": "pm_alex", "voice_fx": 0.5, "speed": 1.05, "game_mode": true, "model": "",
             "claps": 5, "clap_rise": 25, "clap_level": -36, "clap_decay": 10, "clap_flat": 0.01 }
 ```
 
   `mic` é parte do nome do microfone; se ficar vazio, ele usa o padrão do Windows, ou o headset se o padrão for virtual (DroidCam etc.).
-  `voice` aceita `pf_dora` (feminina), `pm_alex` ou `pm_santa` (masculinas).
+  `voice` aceita `pm_alex` (padrão) ou `pm_santa` (masculinas) e `pf_dora` (feminina).
+  `voice_fx`: efeito de "voz de IA" (sala curta + toque eletrônico): `0` desliga, `0.5` é o padrão, `1` fica bem robótico.
   `game_mode`: pausar a escuta com app em tela cheia (padrão `true`).
   `model`: fixa o modelo (`haiku` ou `sonnet`); vazio = escolhe pelo pedido.
   `claps`: quantas palmas abrem o Jarvis (padrão 5). Se algo ainda disparar por engano, aumente `clap_decay`

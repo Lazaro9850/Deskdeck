@@ -47,7 +47,7 @@ New-Item -ItemType Directory -Force $dest, "$root\libs", "$root\data" | Out-Null
 Write-Host "Instalando bibliotecas Python em $root\libs ..."
 & $py -m pip install --disable-pip-version-check -q --upgrade --target "$root\libs" -r "$here\agent\requirements.txt"
 
-foreach ($f in 'painel_agent.py','jarvis_service.py','palmas.py','demo.py','jarvis_persona.md','mcp_painel.py','jarvis_models.py','requirements-jarvis.txt','usage_and_apps.py','taskbar_apps.ps1','audio_helper.ps1','audio_helper.cs','claude_hook.py','claude_statusline.py','requirements.txt','PainelPC.apk') {
+foreach ($f in 'painel_agent.py','jarvis_service.py','palmas.py','voz_fx.py','demo.py','jarvis_persona.md','mcp_painel.py','jarvis_models.py','requirements-jarvis.txt','usage_and_apps.py','taskbar_apps.ps1','audio_helper.ps1','audio_helper.cs','claude_hook.py','claude_statusline.py','requirements.txt','PainelPC.apk') {
   Copy-Item "$here\agent\$f" "$dest\$f" -Force
 }
 
