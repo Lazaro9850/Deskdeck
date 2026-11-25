@@ -76,7 +76,7 @@ def load_cfg():
     d = {"mic": "", "voice": "pf_dora", "speed": 1.05, "threads": 4, "unload_after": 300,
          "max_listen": 15, "silence_end": 0.9, "no_speech_timeout": 7,
          "wake_threshold": 0.5, "game_mode": True, "barge_in": True,
-         "claps": 5, "clap_rise": 25, "clap_level": -36}
+         "claps": 5, "clap_rise": 25, "clap_level": -36, "clap_decay": 10, "clap_flat": 0.01}
     d.update(c)
     return d
 
@@ -729,7 +729,8 @@ class Jarvis:
         if self.wake:
             m = self._load_wake()
             m.reset()
-        clap = ClapDetector(c.get("claps", 5), c.get("clap_rise", 25), c.get("clap_level", -36))
+        clap = ClapDetector(c.get("claps", 5), c.get("clap_rise", 25), c.get("clap_level", -36),
+                            c.get("clap_decay", 10), c.get("clap_flat", 0.01))
         q = queue.Queue()
         thr = float(c["wake_threshold"])
         mode = (self.wake, self.claps)
