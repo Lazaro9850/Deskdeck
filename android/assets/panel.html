@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, target-densitydpi=device-dpi">
+<title>Painel PC</title>
+<style>
+/* ES5 + CSS compativel com o WebKit do Android 4.1: sem flexbox moderno, sem variaveis CSS.
+   Alto contraste: fundo quase preto, cartoes claros com borda forte, texto branco/cinza claro. */
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#030507;color:#ffffff;
+  font-family:"Roboto","Droid Sans",Arial,sans-serif;-webkit-user-select:none;-webkit-tap-highlight-color:rgba(0,0,0,0)}
+*{box-sizing:border-box;-webkit-box-sizing:border-box}
+#top{position:absolute;left:0;right:0;top:0;height:4.4rem;border-bottom:2px solid #34465a;z-index:5;background:#030507}
+#brand{position:absolute;left:1rem;top:0;line-height:4.4rem;font-size:1.8rem;font-weight:bold;letter-spacing:.1rem;color:#ffffff}
+#brand b{color:#4fd8f0}
+#link{position:absolute;left:14rem;top:0;line-height:4.4rem;font-size:1.4rem;font-weight:bold;color:#c9d4de;white-space:nowrap;max-width:9rem;overflow:hidden;text-overflow:ellipsis}
+#dot{display:inline-block;width:1.2rem;height:1.2rem;border-radius:.6rem;background:#ff4d4d;margin-right:.6rem;vertical-align:middle;position:relative;top:-.15rem;border:2px solid #030507}
+#dot.on{background:#3cff8a}
+#tabs{position:absolute;left:50%;top:.5rem;width:33rem;margin-left:-16.5rem;height:3.4rem;background:#0d141c;border:2px solid #4a5d72;border-radius:1.7rem}
+.tab{position:absolute;top:0;width:33.34%;height:100%;line-height:3rem;text-align:center;font-size:1.6rem;font-weight:bold;color:#9fb0c2;border-radius:1.6rem}
+#tab0{left:0}#tab1{left:33.33%}#tab2{right:0}
+.tab.sel{background:#4fd8f0;color:#00141a}
+#clock{position:absolute;right:1rem;top:0;line-height:4.4rem;font-size:2.8rem;font-weight:bold;color:#ffffff}
+#date{position:absolute;right:10.4rem;top:0;line-height:4.4rem;font-size:1.5rem;font-weight:bold;color:#c9d4de;white-space:nowrap}
+
+#pages{position:absolute;left:0;right:0;top:4.4rem;bottom:0;overflow:hidden}
+#strip{position:absolute;left:0;top:0;bottom:0;width:300%;-webkit-transform:translate3d(0,0,0)}
+#strip.anim{-webkit-transition:-webkit-transform .28s ease-out}
+.page{position:absolute;top:0;bottom:0;width:33.3333%}
+#p1{left:0}#p2{left:33.3333%}#p3{left:66.6667%}
+
+/* ---- pagina 3: processos (como o Gerenciador de Tarefas) */
+#pt{left:.8rem;top:.8rem;right:.8rem;bottom:.8rem}
+#ptab{width:100%;border-collapse:collapse;table-layout:fixed}
+#ptab th{height:4.8rem;background:#0d141c;border-bottom:2px solid #4a5d72;border-left:1px solid #26323f;text-align:right;padding:0 .9rem;vertical-align:middle;white-space:nowrap;overflow:hidden}
+#ptab th .tv{display:block;font-size:2rem;font-weight:bold;color:#ffffff;height:2.1rem}
+#ptab th .tl{display:block;font-size:1.25rem;font-weight:bold;color:#9fb0c2}
+#ptab th.s{background:#13324a}
+#ptab th.s .tl{color:#4fd8f0}
+#ptab .l{text-align:left}
+#ptab td{padding:0 .9rem;border-bottom:2px solid #26323f;border-left:1px solid #26323f;font-size:1.95rem;font-weight:bold;color:#ffffff;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ptab td.nm{font-size:2rem}
+#ptab td.sm{font-size:1.4rem}
+#ptab td.dim{color:#9fb0c2;font-weight:normal}
+
+/* ---- pagina 1: apps da barra de tarefas */
+#apps{position:absolute;left:.8rem;right:.8rem;top:.8rem;bottom:.8rem}
+.app{position:absolute;background:#18222e;border:2px solid #3b4d61;border-radius:1.2rem;text-align:center;overflow:hidden}
+.app.dn{background:#2b3a4b;border-color:#4fd8f0}
+.app img{position:absolute;left:50%;top:14%}
+.app .al{position:absolute;left:.4rem;right:.4rem;bottom:1.8rem;font-size:1.9rem;font-weight:bold;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app .run{position:absolute;left:50%;bottom:.7rem;width:6rem;margin-left:-3rem;height:.6rem;border-radius:.3rem;background:#4fd8f0;display:none}
+.app.on{border-color:#4fd8f0}
+.app.on .run{display:block}
+.empty{position:absolute;left:0;right:0;top:45%;text-align:center;font-size:1.7rem;color:#c9d4de}
+
+/* ---- pagina 2: painel */
+.card{position:absolute;background:#141d27;border:2px solid #34465a;border-radius:1rem;overflow:hidden}
+.h{font-size:1.45rem;font-weight:bold;letter-spacing:.15rem;color:#9fb0c2;text-transform:uppercase}
+#sys{left:.8rem;top:.8rem;width:28rem;bottom:.8rem;padding:1rem 1.3rem}
+#med{left:29.6rem;top:.8rem;width:31rem;height:17rem;padding:1rem 1.3rem}
+#cl{left:29.6rem;top:18.6rem;width:31rem;bottom:.8rem;padding:1rem 1.3rem}
+#keys{position:absolute;left:61.4rem;top:.8rem;right:.8rem;bottom:.8rem}
+
+.m{position:relative;height:9.4rem}
+.m .lbl{position:absolute;left:0;top:0;font-size:2rem;color:#ffffff;font-weight:bold}
+.m .val{position:absolute;right:0;top:-.6rem;font-size:3.5rem;font-weight:bold}
+.m .sub{position:absolute;left:0;top:2.5rem;font-size:1.4rem;color:#b8c4d0;white-space:nowrap}
+.m canvas{position:absolute;left:0;top:4.5rem;width:100%;height:4.3rem}
+.bar{position:relative;height:1.2rem;border-radius:.6rem;background:#2a3746;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:.6rem;background:#4fd8f0}
+.row{position:relative;height:5.4rem}
+.row .lbl{position:absolute;left:0;top:0;font-size:1.9rem;color:#ffffff;font-weight:bold}
+.row .val{position:absolute;right:0;top:.3rem;font-size:1.6rem;font-weight:bold;color:#e6edf3}
+.row .bar{position:absolute;left:0;right:0;top:2.9rem}
+.foot{position:absolute;left:1.3rem;right:1.3rem;bottom:1rem;font-size:1.5rem;color:#b8c4d0;white-space:nowrap;overflow:hidden}
+.foot b{color:#ffffff}
+
+#art{position:absolute;left:1.3rem;top:3.1rem;width:6.6rem;height:6.6rem;border-radius:.7rem;background:#223040;border:2px solid #3b4d61;overflow:hidden}
+#art img{width:100%;height:100%;display:none}
+#art svg{position:absolute;left:1.6rem;top:1.6rem;width:3.2rem;height:3.2rem}
+#mtitle{position:absolute;left:9.2rem;right:1.3rem;top:3rem;font-size:1.95rem;font-weight:bold;line-height:2.3rem;max-height:2.3rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#martist{position:absolute;left:9.2rem;right:1.3rem;top:5.6rem;font-size:1.6rem;font-weight:bold;color:#c9d4de;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mapp{position:absolute;left:9.2rem;right:1.3rem;top:7.8rem;font-size:1.3rem;color:#9fb0c2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mprog{position:absolute;left:1.3rem;right:1.3rem;top:10.5rem;height:.8rem}
+#mtime{display:none}
+#mctl{position:absolute;left:1.3rem;right:1.3rem;bottom:.6rem;height:3.6rem}
+.cb{position:absolute;top:0;height:3.6rem;border-radius:1.8rem;background:#26384a;border:2px solid #4a5d72;text-align:center}
+.cb svg{width:2.3rem;height:2.3rem;margin-top:.45rem;fill:#ffffff}
+#bprev{left:0;width:8.4rem}#bplay{left:50%;margin-left:-5.6rem;width:11.2rem;background:#4fd8f0;border-color:#4fd8f0}#bplay svg{fill:#00141a}#bnext{right:0;width:8.4rem}
+.cb.dn{background:#3b5168}#bplay.dn{background:#2aa3b8}
+
+/* cartao do Claude: sessao (5h) e semanal */
+#clsrc{position:absolute;right:1.3rem;top:1.1rem;font-size:1.2rem;font-weight:bold;color:#9fb0c2;white-space:nowrap}
+.cq{position:absolute;left:1.3rem;right:1.3rem;height:10rem}
+#cq0{top:3.4rem}#cq1{top:13.4rem}
+.cq .k{position:absolute;left:0;top:0;font-size:1.9rem;font-weight:bold;color:#ffffff}
+.cq .v{position:absolute;right:0;top:-.5rem;font-size:2.9rem;font-weight:bold;color:#ffffff}
+.cq .bar{position:absolute;left:0;right:0;top:3.2rem;height:1.6rem;border-radius:.8rem}
+.cq .bar i{border-radius:.8rem;background:#b18cff}
+.cq .r{position:absolute;left:0;right:0;top:5.4rem;font-size:1.45rem;font-weight:bold;color:#c4a8ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#clchart{display:none}
+
+.key{position:absolute;background:#18222e;border:2px solid #3b4d61;border-radius:1rem;text-align:center;overflow:hidden}
+.key .ic{position:absolute;left:50%;top:20%;width:4.2rem;height:4.2rem;margin-left:-2.1rem}
+.key .ic svg{width:100%;height:100%}
+.key .tx{position:absolute;left:.3rem;right:.3rem;bottom:.7rem;font-size:1.4rem;font-weight:bold;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.key .st{position:absolute;left:0;top:0;right:0;height:.6rem}
+.key.dn{background:#2b3a4b;border-color:#ffffff}
+.key.on{border-color:#ff4d4d;background:#4a1418}
+
+#off{position:absolute;left:0;right:0;top:4.4rem;bottom:0;background:rgba(3,5,7,.9);display:none;text-align:center;z-index:6}
+#off .big{margin-top:12rem;font-size:3rem;font-weight:bold;color:#ffffff}
+#off .sm{margin-top:1rem;font-size:1.6rem;color:#c9d4de;line-height:2.4rem}
+
+#ask{position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.94);display:none;z-index:8}
+#askbox{position:absolute;left:6rem;right:6rem;top:3rem;bottom:3rem;background:#161f2a;border:3px solid #b18cff;border-radius:1.2rem;padding:1.6rem 2rem}
+#askh{font-size:1.4rem;letter-spacing:.15rem;color:#c4a8ff;font-weight:bold;text-transform:uppercase}
+#asktool{font-size:2.6rem;font-weight:bold;margin-top:.6rem}
+#askcwd{font-size:1.3rem;color:#b8c4d0;margin-top:.3rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#askdet{position:absolute;left:2rem;right:2rem;top:10.4rem;bottom:9.4rem;background:#000000;border:2px solid #34465a;border-radius:.7rem;padding:1rem;font-family:"Droid Sans Mono",monospace;font-size:1.5rem;line-height:2rem;color:#ffffff;overflow:hidden;word-wrap:break-word;white-space:pre-wrap}
+#askleft{position:absolute;right:2rem;top:1.8rem;font-size:1.5rem;font-weight:bold;color:#ffffff}
+.ab{position:absolute;bottom:1.8rem;height:6rem;width:44%;border-radius:1rem;text-align:center;line-height:5.6rem;font-size:2.3rem;font-weight:bold}
+#adeny{left:2rem;background:#5a1a1f;color:#ffb3b0;border:2px solid #ff5a55}
+#aallow{right:2rem;background:#164d2c;color:#b4ffcf;border:2px solid #3cff8a}
+.ab.dn{opacity:.6}
+
+#toast{position:absolute;left:50%;bottom:2rem;width:36rem;margin-left:-18rem;background:#ffffff;color:#030507;border-radius:2.4rem;padding:1.1rem 1.6rem;font-size:1.7rem;font-weight:bold;text-align:center;display:none;z-index:9}
+</style>
+</head>
+<body>
+<div id="top">
+  <div id="brand">PAINEL <b>PC</b></div>
+  <div id="link"><span id="dot"></span><span id="linktx">Aguardando o PC</span></div>
+  <div id="tabs"><div class="tab sel" id="tab0">Apps</div><div class="tab" id="tab1">Painel</div><div class="tab" id="tab2">Processos</div></div>
+  <div id="date"></div>
+  <div id="clock">--:--</div>
+</div>
+
+<div id="pages"><div id="strip">
+  <div class="page" id="p1"><div id="apps"><div class="empty">Carregando os apps da barra de tarefas…</div></div></div>
+
+  <div class="page" id="p2">
+    <div id="sys" class="card">
+      <div class="m"><div class="lbl">CPU</div><div class="sub" id="cpusub">&nbsp;</div><div class="val" id="cpuv">--</div><canvas id="cpuc"></canvas></div>
+      <div class="m"><div class="lbl">GPU</div><div class="sub" id="gpusub">&nbsp;</div><div class="val" id="gpuv">--</div><canvas id="gpuc"></canvas></div>
+      <div class="row"><div class="lbl">RAM</div><div class="val" id="ramv">--</div><div class="bar"><i id="ramb"></i></div></div>
+      <div class="row"><div class="lbl">Disco C:</div><div class="val" id="dskv">--</div><div class="bar"><i id="dskb" style="background:#b18cff"></i></div></div>
+      <div class="foot">Rede &nbsp;<b id="netd">↓ --</b> &nbsp;<b id="netu">↑ --</b><b id="upt" style="display:none"></b></div>
+    </div>
+
+    <div id="med" class="card">
+      <div class="h">Tocando agora</div>
+      <div id="art"><img id="artimg" alt=""><svg viewBox="0 0 24 24" fill="#3a4757"><path d="M12 3v10.6A4 4 0 1 0 14 17V7h4V3z"/></svg></div>
+      <div id="mtitle">Nada tocando</div>
+      <div id="martist">&nbsp;</div>
+      <div id="mapp">&nbsp;</div>
+      <div id="mprog" class="bar"><i id="mprogb" style="background:#e6edf3"></i></div>
+      <div id="mtime"><b id="mpos" style="font-weight:normal">0:00</b><span id="mdur">0:00</span></div>
+      <div id="mctl">
+        <div class="cb" id="bprev"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM9.5 12L18 18V6z"/></svg></div>
+        <div class="cb" id="bplay"><svg viewBox="0 0 24 24" id="playic"><path d="M8 5v14l11-7z"/></svg></div>
+        <div class="cb" id="bnext"><svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg></div>
+      </div>
+    </div>
+
+    <div id="cl" class="card">
+      <div class="h">Claude Code</div>
+      <div id="clsrc"></div>
+      <div class="cq" id="cq0"><div class="k">Sessão (5h)</div><div class="v" id="cqv0">--</div><div class="bar"><i id="cqb0"></i></div><div class="r" id="cqr0"></div></div>
+      <div class="cq" id="cq1"><div class="k">Semanal</div><div class="v" id="cqv1">--</div><div class="bar"><i id="cqb1"></i></div><div class="r" id="cqr1"></div></div>
+      <canvas id="clchart"></canvas>
+      
+    </div>
+
+    <div id="keys"></div>
+  </div>
+
+  <div class="page" id="p3">
+    <div id="pt" class="card">
+      <table id="ptab">
+        <colgroup><col style="width:45%"><col style="width:12%"><col style="width:14%"><col style="width:17%"><col style="width:12%"></colgroup>
+        <thead><tr>
+          <th class="l" data-k="n"><span class="tv" id="tvn">--</span><span class="tl">Nome</span></th>
+          <th data-k="cpu"><span class="tv" id="tvcpu">--</span><span class="tl">CPU</span></th>
+          <th data-k="mem"><span class="tv" id="tvmem">--</span><span class="tl">Memória</span></th>
+          <th data-k="disk"><span class="tv" id="tvdisk">--</span><span class="tl">Disco</span></th>
+          <th data-k="gpu"><span class="tv" id="tvgpu">--</span><span class="tl">GPU</span></th>
+        </tr></thead>
+        <tbody id="ptb"></tbody>
+      </table>
+    </div>
+  </div>
+</div></div>
+
+<div id="off"><div class="big">Aguardando o PC</div><div class="sm" id="offtx">Conecte o cabo USB e deixe o agente rodando no computador.<br>Toque e segure o relógio para mostrar/esconder a barra do Android.</div></div>
+
+<div id="ask">
+  <div id="askbox">
+    <div id="askh">Claude Code pede permissão</div>
+    <div id="askleft"></div>
+    <div id="asktool">—</div>
+    <div id="askcwd"></div>
+    <div id="askdet"></div>
+    <div class="ab" id="adeny">Negar</div>
+    <div class="ab" id="aallow">Permitir</div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var hasBridge = typeof window.Bridge !== 'undefined';
+  var lastMsg = 0, linkUp = false, host = '', cfg = null;
+  var cpuHist = [], gpuHist = [], HIST = 48;
+  var media = null, mediaAt = 0, askQueue = [], askCur = null, claude = null;
+  var page = 0, running = {};
+
+  var ICONS = {
+    app: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+    note: 'M6 2h9l5 5v15H6zM14 3v5h5M8.5 12h9v1.6h-9zM8.5 15.5h9v1.6h-9zM8.5 19h6v1.6h-6z',
+    calc: 'M6 2h12a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm1 2v4h10V4zm0 6v2h2v-2zm4 0v2h2v-2zm4 0v2h2v-2zM7 14v2h2v-2zm4 0v2h2v-2zm4 0v6h2v-6zM7 18v2h2v-2zm4 0v2h2v-2z',
+    folder: 'M2 5h8l2 2h10v13H2z',
+    globe: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.9 6h-3a15 15 0 0 0-1.3-4 8 8 0 0 1 4.3 4zM12 4c.9 1.2 1.6 2.6 2 4h-4c.4-1.4 1.1-2.8 2-4zM4.3 14a8 8 0 0 1 0-4h3.4a16 16 0 0 0 0 4zm.8 2h3a15 15 0 0 0 1.3 4 8 8 0 0 1-4.3-4zm3-8h-3a8 8 0 0 1 4.3-4A15 15 0 0 0 8.1 8zM12 20c-.9-1.2-1.6-2.6-2-4h4c-.4 1.4-1.1 2.8-2 4zm2.3-6H9.7a14 14 0 0 1 0-4h4.6a14 14 0 0 1 0 4zm.3 6a15 15 0 0 0 1.3-4h3a8 8 0 0 1-4.3 4zm1.7-6a16 16 0 0 0 0-4h3.4a8 8 0 0 1 0 4z',
+    tasks: 'M3 3h18v18H3zm2 2v14h14V5zm2 9h2v3H7zm4-4h2v7h-2zm4-3h2v10h-2z',
+    camera: 'M9 3l-2 3H3v14h18V6h-4l-2-3zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
+    mic: 'M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3zm-7 9h2a5 5 0 0 0 10 0h2a7 7 0 0 1-6 6.9V21h-2v-3.1A7 7 0 0 1 5 11z',
+    mute: 'M3 9h4l5-5v16l-5-5H3zm13.6 0L15 10.6l1.4 1.4-1.4 1.4 1.6 1.6 1.4-1.4 1.4 1.4 1.6-1.6-1.4-1.4 1.4-1.4L19.4 9 18 10.4z',
+    voldn: 'M3 9h4l5-5v16l-5-5H3zm12 2h7v2h-7z',
+    volup: 'M3 9h4l5-5v16l-5-5H3zm14-1h2v3h3v2h-3v3h-2v-3h-3v-2h3z',
+    rec: 'M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16z',
+    lock: 'M7 10V7a5 5 0 0 1 10 0v3h2v12H5V10zm2 0h6V7a3 3 0 0 0-6 0zm3 4a2 2 0 0 0-1 3.7V19h2v-1.3a2 2 0 0 0-1-3.7z',
+    term: 'M3 4h18v16H3zM5 6v12h14V6zM7 9l4 3-4 3v-2l1.5-1L7 11zM12 15h5v-1.6h-5z',
+    play: 'M8 5v14l11-7z',
+    bolt: 'M13 2L4 14h7l-1 8 9-12h-7z'
+  };
+  function svg(name, color) {
+    return '<svg viewBox="0 0 24 24"><path fill="' + (color || '#ffffff') + '" d="' + (ICONS[name] || ICONS.app) + '"/></svg>';
+  }
+  function setText(el, t) { if (el._t !== t) { el._t = t; el.textContent = t; } }
+  function setW(el, p) { p = Math.max(0, Math.min(100, p || 0)); var w = p.toFixed(1) + '%'; if (el._w !== w) { el._w = w; el.style.width = w; } }
+  function pctColor(p) { return p >= 90 ? '#ff4d4d' : (p >= 70 ? '#ffc233' : null); }
+  function fmtBytes(b) {
+    if (b == null) return '--';
+    var u = ['B', 'KB', 'MB', 'GB', 'TB'], i = 0;
+    while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+    return (b >= 100 || i === 0 ? b.toFixed(0) : b.toFixed(1)).replace('.', ',') + ' ' + u[i];
+  }
+  function fmtRate(b) { return fmtBytes(b) + '/s'; }
+  function fmtTok(n) {
+    if (n == null) return '--';
+    if (n >= 1e9) return (n / 1e9).toFixed(1).replace('.', ',') + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(1).replace('.', ',') + 'M';
+    if (n >= 1e3) return Math.round(n / 1e3) + 'k';
+    return String(n);
+  }
+  function fmtDur(s) {
+    s = Math.max(0, Math.floor(s || 0));
+    var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+    return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (x < 10 ? '0' : '') + x;
+  }
+  function fmtLeft(sec) {
+    if (sec == null) return '';
+    if (sec <= 0) return 'agora';
+    var d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60);
+    if (d) return d + 'd ' + h + 'h';
+    if (h) return h + 'h ' + (m < 10 ? '0' : '') + m + 'm';
+    return m + 'min';
+  }
+  function fmtUp(s) { var d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60); return d ? d + 'd ' + h + 'h' : h + 'h ' + m + 'm'; }
+
+  /* ---------- toque: um "tap" so vale se o dedo nao arrastou ---------- */
+  var touch = 'ontouchstart' in window, tStartX = 0, tStartY = 0, tMoved = false;
+  if (touch) {
+    document.addEventListener('touchstart', function (e) { var t = e.touches[0]; tStartX = t.pageX; tStartY = t.pageY; tMoved = false; }, true);
+    document.addEventListener('touchmove', function (e) { var t = e.touches[0]; if (Math.abs(t.pageX - tStartX) > 12 || Math.abs(t.pageY - tStartY) > 12) tMoved = true; }, true);
+  }
+  function tap(el, fn) {
+    if (touch) {
+      el.addEventListener('touchstart', function () { el.className += ' dn'; }, false);
+      el.addEventListener('touchend', function (e) { el.className = el.className.replace(/ dn/g, ''); e.preventDefault(); if (!tMoved) fn(); }, false);
+      el.addEventListener('touchcancel', function () { el.className = el.className.replace(/ dn/g, ''); }, false);
+    } else {
+      el.addEventListener('click', fn, false);
+    }
+  }
+  function send(o) { if (hasBridge) Bridge.send(JSON.stringify(o)); }
+  var toastT = null;
+  function toast(t) {
+    var el = $('toast'); el.textContent = t; el.style.display = 'block';
+    if (toastT) clearTimeout(toastT);
+    toastT = setTimeout(function () { el.style.display = 'none'; }, 2200);
+  }
+
+  /* ---------- paginas (arrastar para o lado ou tocar nas abas) ---------- */
+  function goPage(n, animate) {
+    var old = page;
+    page = Math.max(0, Math.min(2, n));
+    var s = $('strip'), W = $('pages').offsetWidth;
+    s.className = animate ? 'anim' : '';
+    s.style.webkitTransform = 'translate3d(' + (-page * W) + 'px,0,0)';
+    $('tab0').className = 'tab' + (page === 0 ? ' sel' : '');
+    $('tab1').className = 'tab' + (page === 1 ? ' sel' : '');
+    $('tab2').className = 'tab' + (page === 2 ? ' sel' : '');
+    if (page !== old) send({ t: 'page', n: page }); /* o PC so calcula os processos com a aba aberta */
+    if (page === 1) { drawSpark($('cpuc'), cpuHist, '#4fd8f0'); drawSpark($('gpuc'), gpuHist, '#3cff8a'); drawClaudeChart(); }
+  }
+  (function swipe() {
+    var pg = $('pages'), sx = 0, sy = 0, dx = 0, drag = false;
+    pg.addEventListener('touchstart', function (e) { var t = e.touches[0]; sx = t.pageX; sy = t.pageY; dx = 0; drag = false; e.preventDefault(); }, false);
+    pg.addEventListener('touchmove', function (e) {
+      var t = e.touches[0]; dx = t.pageX - sx;
+      if (!drag && Math.abs(dx) > 14 && Math.abs(dx) > Math.abs(t.pageY - sy)) { drag = true; $('strip').className = ''; }
+      if (drag) {
+        e.preventDefault();
+        var W = pg.offsetWidth, x = -page * W + dx;
+        if (x > 0) x = x / 3; if (x < -2 * W) x = -2 * W + (x + 2 * W) / 3;
+        $('strip').style.webkitTransform = 'translate3d(' + x + 'px,0,0)';
+      }
+    }, false);
+    pg.addEventListener('touchend', function () {
+      if (!drag) return;
+      var W = pg.offsetWidth;
+      if (dx < -W * 0.15) goPage(page + 1, true); else if (dx > W * 0.15) goPage(page - 1, true); else goPage(page, true);
+      drag = false;
+    }, false);
+  })();
+
+  /* ---------- escala: o desenho base e 800x444 ---------- */
+  function fit() {
+    var fs = Math.min(window.innerWidth / 80, window.innerHeight / 44.4);
+    document.documentElement.style.fontSize = fs + 'px';
+    sizeCanvas($('cpuc')); sizeCanvas($('gpuc')); sizeCanvas($('clchart'));
+    layoutKeys(); layoutApps(); layoutProcs();
+    goPage(page, false);
+  }
+  function sizeCanvas(c) { c.width = c.offsetWidth; c.height = c.offsetHeight; }
+  function drawSpark(c, h, color) {
+    if (page !== 1) return;
+    var ctx = c.getContext('2d'), w = c.width, ht = c.height;
+    ctx.clearRect(0, 0, w, ht);
+    ctx.fillStyle = '#0b1219'; ctx.fillRect(0, 0, w, ht);
+    if (h.length < 2) return;
+    var step = w / (HIST - 1), x0 = w - (h.length - 1) * step;
+    ctx.beginPath(); ctx.moveTo(x0, ht);
+    for (var i = 0; i < h.length; i++) ctx.lineTo(x0 + i * step, ht - 2 - (h[i] / 100) * (ht - 4));
+    ctx.lineTo(w, ht); ctx.closePath();
+    ctx.globalAlpha = 0.25; ctx.fillStyle = color; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.beginPath();
+    for (var j = 0; j < h.length; j++) { var y = ht - 2 - (h[j] / 100) * (ht - 4); if (j) ctx.lineTo(x0 + j * step, y); else ctx.moveTo(x0, y); }
+    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+  }
+
+  /* ---------- relogio (hora e fuso do PC; o tablet nao tem relogio confiavel) ---------- */
+  var DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  var MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  var skew = 0, tzMin = null;
+  function now() { return Date.now() + skew; }
+  function tick() {
+    var d, h, m, wd, dd, mo;
+    if (tzMin !== null) {
+      d = new Date(now() + tzMin * 60000);
+      h = d.getUTCHours(); m = d.getUTCMinutes(); wd = d.getUTCDay(); dd = d.getUTCDate(); mo = d.getUTCMonth();
+    } else {
+      d = new Date(); h = d.getHours(); m = d.getMinutes(); wd = d.getDay(); dd = d.getDate(); mo = d.getMonth();
+    }
+    setText($('clock'), (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m);
+    setText($('date'), DIAS[wd] + ', ' + dd + ' ' + MESES[mo]);
+    var alive = linkUp && (Date.now() - lastMsg < 7000);
+    $('dot').className = alive ? 'on' : '';
+    setText($('linktx'), alive ? (hasBridge ? Bridge.mode().toUpperCase() : 'OK') : 'Sem PC');
+    $('off').style.display = alive ? 'none' : 'block';
+    if (media && media.playing && media.dur) drawProgress();
+    if (claude) renderClaudeTime();
+    if (askCur) {
+      var left = Math.round((askCur.expires - Date.now()) / 1000);
+      setText($('askleft'), left > 0 ? left + ' s' : '');
+      if (left <= -2) closeAsk(askCur.id);
+    }
+  }
+  /* segurar o relogio: mostra/esconde a barra do Android */
+  (function () {
+    var t = null, el = $('clock');
+    el.addEventListener('touchstart', function (e) {
+      e.stopPropagation();
+      t = setTimeout(function () { t = null; if (hasBridge) { Bridge.toggleCover(); toast(Bridge.covered() ? 'Barra do Android visível' : 'Barra do Android escondida'); } }, 1200);
+    }, false);
+    el.addEventListener('touchend', function () { if (t) { clearTimeout(t); t = null; } }, false);
+  })();
+
+  /* ---------- pagina 1: apps da barra de tarefas ---------- */
+  function buildApps() {
+    var box = $('apps'); box.innerHTML = '';
+    var list = (cfg && cfg.apps) || [];
+    if (!list.length) { box.innerHTML = '<div class="empty">Nenhum app fixado na barra de tarefas do PC.</div>'; return; }
+    for (var i = 0; i < list.length; i++) {
+      (function (a) {
+        var el = document.createElement('div');
+        el.className = 'app' + (running[a.id] ? ' on' : '');
+        el.id = 'ap-' + a.id;
+        el.innerHTML = (a.icon ? '<img alt="">' : '<div style="position:absolute;left:50%;top:18%">' + svg('app', '#3ec7e0') + '</div>') + '<div class="al"></div><div class="run"></div>';
+        if (a.icon) el.firstChild.src = a.icon;
+        el.childNodes[1].textContent = a.label;
+        tap(el, function () { send({ t: 'launch', id: a.id }); });
+        box.appendChild(el);
+      })(list[i]);
+    }
+    layoutApps();
+  }
+  function layoutApps() {
+    var box = $('apps'), n = box.childNodes.length;
+    if (!n || box.firstChild.className === 'empty') return;
+    var cols = n <= 4 ? n : (n <= 8 ? 4 : (n <= 10 ? 5 : 6)), rows = Math.ceil(n / cols), gap = 10;
+    var W = box.offsetWidth, H = box.offsetHeight;
+    var w = (W - gap * (cols - 1)) / cols, h = (H - gap * (rows - 1)) / rows;
+    var ic = Math.round(Math.min(w * 0.55, h * 0.5, 130));
+    for (var i = 0; i < n; i++) {
+      var el = box.childNodes[i], s = el.style, c = i % cols, r = Math.floor(i / cols);
+      s.left = Math.round(c * (w + gap)) + 'px'; s.top = Math.round(r * (h + gap)) + 'px';
+      s.width = Math.round(w) + 'px'; s.height = Math.round(h) + 'px';
+      var img = el.firstChild;
+      img.style.width = ic + 'px'; img.style.height = ic + 'px'; img.style.marginLeft = (-ic / 2) + 'px';
+      img.style.top = Math.round((h - ic) * 0.3) + 'px';
+    }
+  }
+  function setRunning(ids) {
+    var map = {}, i;
+    for (i = 0; i < ids.length; i++) map[ids[i]] = true;
+    var list = (cfg && cfg.apps) || [];
+    for (i = 0; i < list.length; i++) {
+      var id = list[i].id, el = $('ap-' + id);
+      if (el && !!map[id] !== !!running[id]) { var c = el.className.replace(/ on/g, ''); el.className = map[id] ? c + ' on' : c; }
+    }
+    running = map;
+  }
+
+  /* ---------- botoes (estilo Stream Deck) ---------- */
+  function buildKeys() {
+    var box = $('keys'); box.innerHTML = '';
+    var list = (cfg && cfg.buttons) || [];
+    for (var i = 0; i < list.length; i++) {
+      (function (b) {
+        var el = document.createElement('div');
+        el.className = 'key' + (b.on ? ' on' : '');
+        el.id = 'k-' + b.id;
+        el.innerHTML = '<div class="st" style="background:' + (b.color || '#3ec7e0') + '"></div><div class="ic">' + svg(b.icon, b.color) + '</div><div class="tx"></div>';
+        el.lastChild.textContent = b.label;
+        tap(el, function () { send({ t: 'press', id: b.id }); });
+        box.appendChild(el);
+      })(list[i]);
+    }
+    layoutKeys();
+  }
+  function layoutKeys() {
+    var box = $('keys'), n = box.childNodes.length; if (!n) return;
+    var cols = n <= 4 ? 1 : ((cfg && cfg.cols) || 3), rows = Math.ceil(n / cols), gap = 8;
+    var W = box.offsetWidth, H = box.offsetHeight;
+    var w = (W - gap * (cols - 1)) / cols, h = (H - gap * (rows - 1)) / rows;
+    for (var i = 0; i < n; i++) {
+      var s = box.childNodes[i].style, c = i % cols, r = Math.floor(i / cols);
+      s.left = Math.round(c * (w + gap)) + 'px'; s.top = Math.round(r * (h + gap)) + 'px';
+      s.width = Math.round(w) + 'px'; s.height = Math.round(h) + 'px';
+    }
+  }
+  function setKeyOn(id, on) {
+    var el = $('k-' + id); if (!el) return;
+    var c = el.className.replace(/ on/g, ''); el.className = on ? c + ' on' : c;
+  }
+
+  /* ---------- dados ---------- */
+  function onStats(s) {
+    if (s.running) setRunning(s.running);
+    if (s.cpu != null) {
+      cpuHist.push(s.cpu); if (cpuHist.length > HIST) cpuHist.shift();
+      setText($('cpuv'), Math.round(s.cpu) + '%'); $('cpuv').style.color = pctColor(s.cpu) || '#ffffff';
+      setText($('cpusub'), (s.cpuname || '') + (s.ghz ? ' · ' + s.ghz.toFixed(2).replace('.', ',') + ' GHz' : ''));
+      drawSpark($('cpuc'), cpuHist, '#4fd8f0');
+    }
+    if (s.gpu) {
+      var g = s.gpu.p || 0;
+      gpuHist.push(g); if (gpuHist.length > HIST) gpuHist.shift();
+      setText($('gpuv'), Math.round(g) + '%'); $('gpuv').style.color = pctColor(g) || '#ffffff';
+      setText($('gpusub'), (s.gpu.name || '') + (s.gpu.mem != null ? ' · ' + fmtBytes(s.gpu.mem) : ''));
+      drawSpark($('gpuc'), gpuHist, '#3cff8a');
+    }
+    if (s.ram) { setText($('ramv'), Math.round(s.ram.p) + '% · ' + fmtBytes(s.ram.used) + ' / ' + fmtBytes(s.ram.total)); setW($('ramb'), s.ram.p); $('ramb').style.background = pctColor(s.ram.p) || '#4fd8f0'; }
+    if (s.disk) { setText($('dskv'), Math.round(s.disk.p) + '% · ' + fmtBytes(s.disk.free) + ' livres'); setW($('dskb'), s.disk.p); }
+    if (s.net) { setText($('netd'), '↓ ' + fmtRate(s.net.down)); setText($('netu'), '↑ ' + fmtRate(s.net.up)); }
+    if (s.up != null) setText($('upt'), fmtUp(s.up));
+    if (s.toggles) for (var k in s.toggles) if (s.toggles.hasOwnProperty(k)) setKeyOn(k, s.toggles[k]);
+  }
+
+  function onMedia(m) {
+    media = m; mediaAt = Date.now();
+    if (!m.has) {
+      setText($('mtitle'), 'Nada tocando'); setText($('martist'), ' '); setText($('mapp'), ' ');
+      $('artimg').style.display = 'none'; setW($('mprogb'), 0); setText($('mpos'), '0:00'); setText($('mdur'), '0:00');
+      setPlayIcon(false); return;
+    }
+    setText($('mtitle'), m.title || '(sem título)');
+    setText($('martist'), m.artist || ' ');
+    setText($('mapp'), m.app || ' ');
+    if (m.art !== undefined) {
+      if (m.art) { $('artimg').src = m.art; $('artimg').style.display = 'block'; }
+      else $('artimg').style.display = 'none';
+    }
+    setPlayIcon(m.playing);
+    drawProgress();
+  }
+  function drawProgress() {
+    if (!media || !media.dur) { setW($('mprogb'), 0); return; }
+    var pos = media.pos + (media.playing ? (Date.now() - mediaAt) / 1000 : 0);
+    if (pos > media.dur) pos = media.dur;
+    setW($('mprogb'), pos / media.dur * 100);
+    setText($('mpos'), fmtDur(pos)); setText($('mdur'), fmtDur(media.dur));
+  }
+  function setPlayIcon(playing) {
+    var p = playing ? 'M6 5h4v14H6zM14 5h4v14h-4z' : 'M8 5v14l11-7z';
+    var path = $('playic').firstChild; if (path.getAttribute('d') !== p) path.setAttribute('d', p);
+  }
+
+  /* ---------- Claude Code ---------- */
+  function onClaude(c) {
+    claude = c;
+    setText($('clsrc'), c.real ? 'limite do plano' : 'tokens deste PC');
+    renderClaudeTime();
+  }
+  /* Uma medicao: percentual real (com barra) se houver; senao, os tokens contados neste PC. */
+  function quota(i, real, tokens, reset, unknownReset) {
+    var t = now() / 1000, bar = $('cqb' + i);
+    if (real) {
+      setText($('cqv' + i), Math.round(real.p) + '%');
+      setW(bar, real.p); bar.style.background = pctColor(real.p) || '#b18cff';
+      reset = real.reset;
+    } else {
+      setText($('cqv' + i), fmtTok(tokens || 0));
+      setW(bar, 0);
+    }
+    setText($('cqr' + i), reset ? 'reinicia em ' + fmtLeft(reset - t) + ' · ' + dayHhmm(reset) : unknownReset);
+  }
+  function dayHhmm(sec) {
+    var diaHoje = Math.floor((now() / 1000 + (tzMin || 0) * 60) / 86400), dia = Math.floor((sec + (tzMin || 0) * 60) / 86400);
+    var d = new Date(sec * 1000 + (tzMin || 0) * 60000);
+    return (dia === diaHoje ? 'hoje ' : DIAS[d.getUTCDay()].toLowerCase() + ' ') + hhmm(sec);
+  }
+  function hhmm(sec) {
+    var d = new Date(sec * 1000 + (tzMin !== null ? tzMin * 60000 : -new Date().getTimezoneOffset() * 60000));
+    var h = d.getUTCHours(), m = d.getUTCMinutes();
+    return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+  }
+  function renderClaudeTime() {
+    var c = claude, b = c.block, r = c.real || {};
+    quota(0, r['5h'], b ? b.tokens : 0, b ? b.end : null, 'sem uso no momento');
+    quota(1, r['7d'], c.week, null, 'reinício: sem dados do plano');
+  }
+  function drawClaudeChart() {
+    return; /* grafico removido do cartao */
+    if (!claude || page !== 1) return;
+    var cv = $('clchart'), ctx = cv.getContext('2d'), w = cv.width, h = cv.height, hs = claude.hourly || [];
+    ctx.clearRect(0, 0, w, h);
+    var max = 1, i; for (i = 0; i < hs.length; i++) if (hs[i] > max) max = hs[i];
+    var bw = w / 24;
+    for (i = 0; i < 24; i++) {
+      var v = hs[i] || 0, bh = v ? Math.max(2, (v / max) * (h - 4)) : 1;
+      ctx.fillStyle = i === 23 ? '#d0b8ff' : (v ? '#9a7cf0' : '#2a3746');
+      ctx.fillRect(Math.round(i * bw + 1), h - bh, Math.max(1, Math.round(bw - 2)), bh);
+    }
+  }
+
+  /* ---------- pagina 3: processos ---------- */
+  var PROWS = 7, procSort = 'cpu';
+  function buildProcs() {
+    var tb = $('ptb'), html = '';
+    for (var i = 0; i < PROWS; i++) {
+      html += '<tr><td class="l nm"></td><td></td><td></td><td></td><td></td></tr>';
+    }
+    tb.innerHTML = html;
+    var ths = $('ptab').getElementsByTagName('th');
+    for (var j = 0; j < ths.length; j++) {
+      (function (th) {
+        var k = th.getAttribute('data-k');
+        if (k) tap(th, function () { procSort = k; markSort(); send({ t: 'procsort', key: k }); });
+      })(ths[j]);
+    }
+    markSort();
+  }
+  function markSort() {
+    var ths = $('ptab').getElementsByTagName('th');
+    for (var j = 0; j < ths.length; j++) {
+      var base = ths[j].className.replace(/ ?s\b/g, '');
+      ths[j].className = ths[j].getAttribute('data-k') === procSort ? (base ? base + ' s' : 's') : base;
+    }
+  }
+  function layoutProcs() {
+    var card = $('pt'), tb = $('ptb'); if (!tb.rows.length) return;
+    var head = $('ptab').tHead.offsetHeight, h = Math.floor((card.clientHeight - head) / PROWS);
+    for (var i = 0; i < tb.rows.length; i++) tb.rows[i].style.height = h + 'px';
+  }
+  /* "calor" das celulas, como no Gerenciador: quanto maior o valor, mais laranja */
+  function heat(v, max) {
+    var t = Math.max(0, Math.min(1, (v || 0) / max));
+    if (t < 0.02) return '';
+    var a = [20, 29, 39], b = [176, 84, 0];
+    return 'rgb(' + Math.round(a[0] + (b[0] - a[0]) * t) + ',' + Math.round(a[1] + (b[1] - a[1]) * t) + ',' + Math.round(a[2] + (b[2] - a[2]) * t) + ')';
+  }
+  var PW = { 'Muito baixo': ['M. baixo', ''], 'Baixo': ['Baixo', '#2a3a20'], 'Moderado': ['Médio', '#6b5200'], 'Alto': ['Alto', '#9a3e00'], 'Muito alto': ['M. alto', '#b3261e'] };
+  function num(v, d) { return v.toFixed(d).replace('.', ','); }
+  function fmtMB(b) {
+    var mb = b / 1048576;
+    if (mb < 10) return mb.toFixed(1).replace('.', ',') + ' MB';
+    return String(Math.round(mb)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' MB';
+  }
+  function cell(td, txt, bg) { setText(td, txt); if (td._bg !== bg) { td._bg = bg; td.style.background = bg; } }
+  function onProcs(m) {
+    var t = m.tot || {}, rows = m.rows || [], tb = $('ptb');
+    if (m.sort && m.sort !== procSort) { procSort = m.sort; markSort(); }
+    setText($('tvn'), (m.count || 0) + ' proc.');
+    setText($('tvcpu'), t.cpu != null ? Math.round(t.cpu) + '%' : '--');
+    setText($('tvmem'), t.mem != null ? Math.round(t.mem) + '%' : '--');
+    setText($('tvdisk'), num((t.disk || 0) / 1e6, 1) + ' MB/s');
+    setText($('tvgpu'), t.gpu != null ? Math.round(t.gpu) + '%' : '--');
+    for (var i = 0; i < PROWS; i++) {
+      var tr = tb.rows[i], r = rows[i], c = tr.cells;
+      if (!r) { for (var k = 0; k < c.length; k++) cell(c[k], '', ''); continue; }
+      cell(c[0], r.n + (r.c > 1 ? ' (' + r.c + ')' : ''), '');
+      cell(c[1], num(r.cpu, r.cpu >= 10 ? 0 : 1) + '%', heat(r.cpu, 40));
+      cell(c[2], fmtMB(r.mem), heat(r.mem, 2147483648));
+      cell(c[3], num(r.disk / 1e6, 1) + ' MB/s', heat(r.disk, 20e6));
+      cell(c[4], num(r.gpu, r.gpu >= 10 ? 0 : 1) + '%', heat(r.gpu, 80));
+    }
+  }
+
+  /* ---------- aprovacoes do Claude Code ---------- */
+  function onApproval(a) { a.expires = Date.now() + (a.timeout || 100) * 1000; askQueue.push(a); if (!askCur) nextAsk(); }
+  function nextAsk() {
+    askCur = askQueue.shift() || null;
+    if (!askCur) { $('ask').style.display = 'none'; return; }
+    setText($('asktool'), askCur.tool || 'Ferramenta');
+    setText($('askcwd'), askCur.cwd || '');
+    setText($('askdet'), askCur.detail || '');
+    setText($('askh'), (askCur.agent || 'Claude Code') + ' pede permissão' + (askQueue.length ? ' (+' + askQueue.length + ')' : ''));
+    $('ask').style.display = 'block';
+  }
+  function closeAsk(id) {
+    if (askCur && askCur.id === id) nextAsk();
+    else for (var i = 0; i < askQueue.length; i++) if (askQueue[i].id === id) { askQueue.splice(i, 1); break; }
+  }
+  function decide(d) { if (!askCur) return; send({ t: 'decide', id: askCur.id, decision: d }); toast(d === 'allow' ? 'Permitido' : 'Negado'); nextAsk(); }
+
+  /* ---------- mensagens do PC ---------- */
+  function handle(m) {
+    if (!m || !m.t) return;
+    if (m.t === 'link') { linkUp = m.up; if (m.up) lastMsg = Date.now(); else { askQueue = []; askCur = null; $('ask').style.display = 'none'; } tick(); return; }
+    lastMsg = Date.now();
+    if (m.now) skew = m.now - Date.now();
+    if (m.t === 'hello') {
+      host = m.host || ''; cfg = m.cfg || cfg; if (m.tz != null) tzMin = m.tz;
+      buildKeys(); buildApps(); tick();
+      send({ t: 'ready', w: window.innerWidth, h: window.innerHeight });
+      send({ t: 'page', n: page });
+      if (page === 2) send({ t: 'procsort', key: procSort });
+    }
+    else if (m.t === 'stats') onStats(m);
+    else if (m.t === 'media') onMedia(m);
+    else if (m.t === 'claude') onClaude(m);
+    else if (m.t === 'procs') onProcs(m);
+    else if (m.t === 'approval') onApproval(m);
+    else if (m.t === 'approval_done') closeAsk(m.id);
+    else if (m.t === 'toast') toast(m.text);
+    else if (m.t === 'key') setKeyOn(m.id, m.on);
+  }
+  window.PB = {
+    pump: function () {
+      if (!hasBridge) return;
+      var arr; try { arr = JSON.parse(Bridge.take()); } catch (e) { return; }
+      for (var i = 0; i < arr.length; i++) { try { handle(arr[i]); } catch (e2) { } }
+    },
+    feed: function (o) { handle(o); } /* para testes no navegador do PC */
+  };
+
+  tap($('tab0'), function () { goPage(0, true); });
+  tap($('tab1'), function () { goPage(1, true); });
+  tap($('tab2'), function () { goPage(2, true); });
+  buildProcs();
+  tap($('bprev'), function () { send({ t: 'media', cmd: 'prev' }); });
+  tap($('bplay'), function () { send({ t: 'media', cmd: 'playpause' }); if (media) { media.playing = !media.playing; setPlayIcon(media.playing); } });
+  tap($('bnext'), function () { send({ t: 'media', cmd: 'next' }); });
+  tap($('aallow'), function () { decide('allow'); });
+  tap($('adeny'), function () { decide('deny'); });
+
+  window.addEventListener('resize', fit, false);
+  fit(); tick();
+  setInterval(tick, 1000);
+  if (hasBridge) { linkUp = Bridge.connected(); if (linkUp) lastMsg = Date.now(); PB.pump(); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{
+  "interval": 1.5,
+  "http_port": 8765,
+  "local_port": 17001,
+  "adb": "",
+  "serial": "",
+  "wifi_host": "",
+  "wifi_token": "",
+  "approval_timeout": 60,
+  "obs": {
+    "host": "localhost",
+    "port": 4455,
+    "password": ""
+  },
+  "cols": 3,
+  "buttons": [
+    {
+      "id": "voldown",
+      "label": "Volume -",
+      "icon": "voldn",
+      "color": "#8b98a5",
+      "type": "volume",
+      "cmd": "down"
+    },
+    {
+      "id": "volup",
+      "label": "Volume +",
+      "icon": "volup",
+      "color": "#8b98a5",
+      "type": "volume",
+      "cmd": "up"
+    },
+    {
+      "id": "mute",
+      "label": "Mudo",
+      "icon": "mute",
+      "color": "#ef5350",
+      "type": "volume",
+      "cmd": "mute"
+    },
+    {
+      "id": "print",
+      "label": "Recorte",
+      "icon": "camera",
+      "color": "#a78bfa",
+      "type": "keys",
+      "keys": [
+        "win",
+        "shift",
+        "s"
+      ]
+    }
+  ]
+}

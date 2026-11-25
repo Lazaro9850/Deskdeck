@@ -1,0 +1,56 @@
+# ---------- Android (build sem Gradle: android\build_apk.ps1)
+android/build/
+android/PainelPC.apk
+*.apk.idsig
+*.ap_
+*.dex
+*.class
+
+# Chave de assinatura do APK: e pessoal, nunca publique.
+# Cada pessoa gera a sua na primeira compilacao.
+*.keystore
+*.jks
+
+# O APK pronto que o agente instala no tablet fica versionado de proposito:
+!agent/PainelPC.apk
+
+# ---------- Agente do PC
+__pycache__/
+*.py[cod]
+# compilado na instalacao a partir de audio_helper.cs
+agent/audio_helper.exe
+
+# Pastas criadas pelo install_pc.ps1 (caso alguem instale dentro do repositorio)
+libs/
+data/
+platform-tools/
+
+# Dados locais gerados pelo agente
+*.log
+crash.log
+apps_cache.json
+plan_usage.json
+claude_rate_limits.json
+
+# ---------- Tablet (enxugar_tablet.ps1)
+tablet/desativados.txt
+tablet/backup_sistema/
+
+# ---------- Segredos: nunca devem ir para o repositorio
+.credentials.json
+*.pem
+*.key
+.env
+.env.*
+
+# ---------- Capturas de tela de teste e arquivos de pacote
+*.png
+!docs/**/*.png
+*.zip
+
+# ---------- Sistema / editores
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
