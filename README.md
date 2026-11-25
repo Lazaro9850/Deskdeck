@@ -43,8 +43,8 @@ Android 4.1 ou mais novo, com a **Depuração USB** ligada, e um cabo USB de dad
 
 1. Baixe o projeto:
    ```powershell
-   git clone https://github.com/Lazaro9850/DeskDeck.git
-   cd DeskDeck
+   git clone https://github.com/Lazaro9850/Deskdeck.git
+   cd Deskdeck
    ```
 2. Instale no PC (o `-Jarvis` é opcional e baixa a voz e os modelos, ~1,1 GB):
    ```powershell
