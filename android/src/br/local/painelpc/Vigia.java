@@ -206,6 +206,9 @@ final class Vigia {
         int max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         if (am.getStreamVolume(AudioManager.STREAM_MUSIC) < max * 8 / 10)
             am.setStreamVolume(AudioManager.STREAM_MUSIC, max * 8 / 10, 0);
+        Log.i(TAG, "fala " + asset + ": volume " + am.getStreamVolume(AudioManager.STREAM_MUSIC) + "/" + max
+                + " modo=" + am.getMode() + " fone=" + am.isWiredHeadsetOn() + " viva-voz=" + am.isSpeakerphoneOn()
+                + " mudo=" + am.isMicrophoneMute());
         final Object done = new Object();
         MediaPlayer mp = new MediaPlayer();
         try {
@@ -228,6 +231,13 @@ final class Vigia {
         } finally {
             mp.release();
         }
+    }
+
+    /** Diagnostico (adb ... --es say pergunta): toca uma fala do APK. */
+    void say(final String name) {
+        new Thread(new Runnable() {
+            public void run() { try { play("voz/" + name + ".wav"); } catch (InterruptedException ignored) {} }
+        }, "vigia-fala").start();
     }
 
     /** Botao "Ligar PC" da tela: liga direto, sem perguntar. */
