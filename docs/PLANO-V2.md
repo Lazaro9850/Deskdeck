@@ -78,3 +78,13 @@ ganhar visibilidade, vale considerar um nome próprio (ex.: "DeskDeck", "PainelP
 2. **Palmas:** posso pedir que você bata palmas durante a medição (A0)? Sem isso não dá para calibrar.
 3. **Nome do projeto:** mantém "SteamDeck" ou troca?
 4. **Prints:** ok usar o modo demonstração (dados fictícios) em vez dos seus dados reais?
+
+---
+
+## Andamento
+- **C1–C3** ✅ modo demonstração, prints, GIF, README novo, docs, licença MIT, nome DeskDeck.
+- **A0** ✅ headset AB13X capta bem as palmas: subida de 28–58 dB e pico de −34 a −9 dBFS. A ideia de
+  "energia acima de 2 kHz" **não** serviu (o microfone corta os agudos), então a regra usa só subida e nível.
+- **A1–A3** ✅ `agent/palmas.py`: 8 de 8 sequências detectadas na gravação, 0 disparos falsos, ~0,1% de um núcleo.
+  Chave "5 PALMAS" na aba Jarvis; contador "palmas: N de 5" no tablet; pausa no modo jogo. Testado ao vivo.
+- **A4** parcial: sensibilidade em `config.json` (`claps`, `clap_rise`, `clap_level`); o contador do tablet serve de calibração.
