@@ -5,10 +5,9 @@ Jarvis: assistente de voz do DeskDeck (processo separado do agente do painel).
 Comunicacao com o agente (painel_agent.py) por stdin/stdout, uma mensagem JSON por linha.
 
 Agente -> Jarvis (comandos):
-  {"cmd": "listen"}            comecar a ouvir (botao "Falar" do tablet; depois, wake word)
+  {"cmd": "listen"}            comecar a ouvir (botao "Falar" do tablet ou 5 palmas)
   {"cmd": "stop"}              parar o que estiver fazendo (ouvir, pensar ou falar)
-  {"cmd": "wake", "on": bool}  liga/desliga a wake word "hey jarvis" (fase 5)
-  {"cmd": "claps", "on": bool} liga/desliga abrir com palmas (v2)
+  {"cmd": "claps", "on": bool} liga/desliga abrir com 5 palmas
   {"cmd": "status"}            reenviar o estado atual
 
 Jarvis -> agente (eventos; o agente repassa ao tablet como {"t": "jarvis", ...}):
@@ -73,15 +72,15 @@ def load_cfg():
             c = json.load(f).get("jarvis") or {}
     except (OSError, ValueError):
         c = {}
-    d = {"mic": "", "voice": "pf_dora", "speed": 1.05, "threads": 4, "unload_after": 300,
+    d = {"mic": "", "voice": "pm_alex", "voice_fx": 0.5, "speed": 1.05, "threads": 4, "unload_after": 300,
          "max_listen": 15, "silence_end": 0.9, "no_speech_timeout": 7,
-         "wake_threshold": 0.5, "game_mode": True, "barge_in": True,
-         "claps": 5, "clap_rise": 25, "clap_level": -36}
+         "game_mode": True,
+         "claps": 5, "clap_rise": 25, "clap_level": -36, "clap_decay": 10, "clap_flat": 0.01}
     d.update(c)
     return d
 
 
-STATE_FILE = os.path.join(ROOT, "data", "jarvis_state.json")  # lembra se o "Hey Jarvis" esta ligado
+STATE_FILE = os.path.join(ROOT, "data", "jarvis_state.json")  # lembra se as palmas estao ligadas
 IMPORT_LOCK = threading.Lock()  # bibliotecas nativas carregadas uma de cada vez
 
 
@@ -147,7 +146,6 @@ class Jarvis:
         self.cfg = load_cfg()
         self.state = "parado"
         st = load_state()
-        self.wake = bool(st.get("wake"))
         self.claps = bool(st.get("claps"))  # abrir com palmas
         self.model = "haiku"
         self.game = False
@@ -155,12 +153,11 @@ class Jarvis:
         self.turn = None
         self.whisper = None
         self.kokoro = None
-        self.wakemodel = None
         self.models_lock = threading.Lock()
         self.last_use = time.time()
         threading.Thread(target=self._janitor, name="jarvis-limpeza", daemon=True).start()
         threading.Thread(target=self._game_watch, name="jarvis-modo-jogo", daemon=True).start()
-        threading.Thread(target=self._wake_loop, name="jarvis-hey-jarvis", daemon=True).start()
+        threading.Thread(target=self._clap_loop, name="jarvis-palmas", daemon=True).start()
 
     # ------------------------------------------------------------- saida
     def emit(self, **ev):
@@ -171,7 +168,7 @@ class Jarvis:
 
     def set_state(self, state, **extra):
         self.state = state
-        self.emit(ev="state", state=state, wake=self.wake, claps=self.claps, model=self.model, game=self.game,
+        self.emit(ev="state", state=state, claps=self.claps, model=self.model, game=self.game,
                   phase=PHASE, **extra)
 
     def check(self):
@@ -210,11 +207,6 @@ class Jarvis:
             self._fake = msg.get("text") or "Jarvis, isto é um teste."
             self.turn = threading.Thread(target=self.run_turn, name="jarvis-autoteste", daemon=True)
             self.turn.start()
-        elif cmd == "wake":
-            self.wake = bool(msg.get("on"))
-            save_state(wake=self.wake)
-            log("hey jarvis %s", "ligado" if self.wake else "desligado")
-            self.set_state(self.state)
         elif cmd == "claps":
             self.claps = bool(msg.get("on"))
             save_state(claps=self.claps)
@@ -232,19 +224,13 @@ class Jarvis:
                             r"esquece|deixa pra l[aá]|nada|obrigad[oa]|valeu)[.!]*$", re.I)
 
     def run_turn(self):
-        """Uma interacao. Se voce disser "Hey Jarvis" enquanto ele fala, ele para e escuta de novo."""
+        """Uma interacao (ouvir -> pensar -> falar). O botao Parar do tablet interrompe."""
         self.last_use = time.time()
         while True:
-            self._barge = False
             try:
                 self._one_turn()
                 return
             except Cancelled:
-                if self._barge and not getattr(self, "_fake", None):
-                    log("interrompido por \"Hey Jarvis\": ouvindo de novo")
-                    self._chime()
-                    self.cancel.clear()
-                    continue  # nova interacao, ja ouvindo
                 self.set_state("parado", detail="interrompido")
                 return
             except NoSpeech as e:
@@ -619,6 +605,10 @@ class Jarvis:
                 try:
                     audio, sr = kokoro.create(falar, voice=self.cfg["voice"], speed=float(self.cfg["speed"]),
                                               lang="pt-br")
+                    fx = float(self.cfg.get("voice_fx") or 0)
+                    if fx > 0:  # "voz de IA": sala curta + toque eletronico (voz_fx.py)
+                        import voz_fx
+                        audio = voz_fx.apply(audio, sr, fx)
                 except Exception as e:  # noqa: BLE001
                     ready.put(e)
                     return
@@ -626,7 +616,6 @@ class Jarvis:
 
         threading.Thread(target=producer, name="jarvis-voz", daemon=True).start()
         said = []
-        barge_stop = threading.Event()
         try:
             while True:
                 self.check()
@@ -641,9 +630,6 @@ class Jarvis:
                 p, audio, sr = item
                 if not said:
                     self.set_state("falando")
-                    if self.cfg.get("barge_in", True) and not self.game:  # "Hey Jarvis" interrompe a fala
-                        threading.Thread(target=self._barge_listen, args=(barge_stop,), name="jarvis-interromper",
-                                         daemon=True).start()
                 said.append(p)
                 self.emit(ev="reply", text=" ".join(said), final=False)
                 sd.play(audio, sr)
@@ -655,112 +641,57 @@ class Jarvis:
             if said:
                 self.emit(ev="reply", text=" ".join(said), final=True)
         finally:
-            barge_stop.set()
             if said:
                 self.remember(None, " ".join(said))  # guarda o que foi dito (mesmo se interrompido)
             self.last_use = time.time()
 
-    def _barge_listen(self, stop):
-        """Enquanto o Jarvis fala: se ouvir "Hey Jarvis", corta a fala e volta a escutar (ver run_turn)."""
-        try:
-            with IMPORT_LOCK:
-                import sounddevice as sd
-            m = self._load_wake()
-            m.reset()
-            q = queue.Queue()
-            thr = float(self.cfg["wake_threshold"])
-            with sd.InputStream(device=self._mic(), samplerate=16000, channels=1, dtype="int16", blocksize=1280,
-                                callback=lambda d, f, t, s: q.put(d[:, 0].copy())):
-                while not stop.is_set() and not self.cancel.is_set():
-                    try:
-                        b = q.get(timeout=0.3)
-                    except queue.Empty:
-                        continue
-                    score = m.predict(b).get("hey_jarvis_v0.1", 0.0)
-                    if score >= thr:
-                        log("\"Hey Jarvis\" durante a fala (%.2f): interrompendo", score)
-                        self._barge = True
-                        self.cancel.set()
-                        sd.stop()
-                        return
-        except Exception as e:  # noqa: BLE001
-            log("interromper por voz: %s", e)
+    # ------------------------------------------------------------- 5 palmas
+    def _clap_active(self):
+        return self.claps and not self.game and not (self.turn and self.turn.is_alive())
 
-    # ------------------------------------------------------------- "Hey Jarvis"
-    def _load_wake(self):
-        if self.wakemodel is None:
-            with IMPORT_LOCK:
-                import types
-                # o pacote importa o modulo de TREINO (scipy/scikit-learn, ~150 MB) no __init__;
-                # para so detectar a frase ele nao e necessario
-                sys.modules.setdefault("openwakeword.custom_verifier_model",
-                                       types.SimpleNamespace(train_custom_verifier=None))
-                from openwakeword.model import Model
-                w = os.path.join(MODELS, "wakeword")
-                self.wakemodel = Model(wakeword_models=[os.path.join(w, "hey_jarvis_v0.1.onnx")],
-                                       inference_framework="onnx",
-                                       melspec_model_path=os.path.join(w, "melspectrogram.onnx"),
-                                       embedding_model_path=os.path.join(w, "embedding_model.onnx"))
-        return self.wakemodel
-
-    def _wake_active(self):
-        return (self.wake or self.claps) and not self.game and not (self.turn and self.turn.is_alive())
-
-    def _wake_loop(self):
-        """Escuta continua da frase "Hey Jarvis" (~2% de um nucleo) e/ou das palmas (~0,1%). Pausa sozinha em jogo,
+    def _clap_loop(self):
+        """Escuta continua das palmas (~0,15% de um nucleo). Pausa sozinha em jogo,
         durante uma conversa e quando a chave esta desligada."""
         while True:
-            if not self._wake_active():
+            if not self._clap_active():
                 time.sleep(0.5)
                 continue
             try:
-                self._listen_for_wake()
+                self._listen_for_claps()
             except Exception as e:  # noqa: BLE001
-                log("hey jarvis: %s", e)
+                log("palmas: %s", e)
                 time.sleep(5)
 
-    def _listen_for_wake(self):
-        """Um so fluxo do microfone alimenta o "Hey Jarvis" (se ligado) e o detector de palmas (se ligado)."""
+    def _listen_for_claps(self):
         with IMPORT_LOCK:
             import sounddevice as sd
         from palmas import ClapDetector
         c = self.cfg
-        m = None
-        if self.wake:
-            m = self._load_wake()
-            m.reset()
-        clap = ClapDetector(c.get("claps", 5), c.get("clap_rise", 25), c.get("clap_level", -36))
+        clap = ClapDetector(c.get("claps", 5), c.get("clap_rise", 25), c.get("clap_level", -36),
+                            c.get("clap_decay", 10), c.get("clap_flat", 0.01))
         q = queue.Queue()
-        thr = float(c["wake_threshold"])
-        mode = (self.wake, self.claps)
         with sd.InputStream(device=self._mic(), samplerate=16000, channels=1, dtype="int16", blocksize=1280,
                             callback=lambda d, f, t, s: q.put(d[:, 0].copy())):
-            while self._wake_active() and (self.wake, self.claps) == mode:
+            while self._clap_active():
                 try:
                     b = q.get(timeout=0.5)
                 except queue.Empty:
                     continue
-                if self.claps:
-                    new, fired = clap.feed(b)
-                    if new:
-                        self.emit(ev="clap", n=clap.count(), need=clap.need)  # contador no tablet
-                    if fired:
-                        log("%d palmas detectadas", clap.need)
-                        break
-                if m is not None:
-                    score = m.predict(b).get("hey_jarvis_v0.1", 0.0)
-                    if score >= thr:
-                        log("hey jarvis detectado (%.2f)", score)
-                        break
+                new, fired = clap.feed(b)
+                if new:
+                    self.emit(ev="clap", n=clap.count(), need=clap.need)  # contador no tablet
+                if fired:
+                    log("%d palmas detectadas", clap.need)
+                    break
             else:
-                return  # pausou (desligado, jogo, conversa) ou a chave mudou: recomeca no laco
+                return  # pausou (desligado, jogo ou conversa em andamento)
         self._chime()
         self.handle({"cmd": "listen"})
         time.sleep(1.0)
 
     @staticmethod
     def _chime():
-        """Bipe curto e suave: avisa que ouviu o "Hey Jarvis" e ja esta escutando o pedido."""
+        """Bipe curto e suave: avisa que ouviu as palmas e ja esta escutando o pedido."""
         try:
             import numpy as np
             import sounddevice as sd
@@ -775,7 +706,7 @@ class Jarvis:
 
     # ------------------------------------------------------------- modo jogo
     def _game_watch(self):
-        """A cada 2 s ve se ha um app em tela cheia. Em jogo: pausa o "Hey Jarvis" e tira os modelos
+        """A cada 2 s ve se ha um app em tela cheia. Em jogo: pausa as palmas e tira os modelos
         de voz da memoria (~750 MB livres para o jogo). O botao Falar do tablet continua funcionando."""
         while True:
             time.sleep(2)

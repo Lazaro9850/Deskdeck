@@ -47,15 +47,13 @@ New-Item -ItemType Directory -Force $dest, "$root\libs", "$root\data" | Out-Null
 Write-Host "Instalando bibliotecas Python em $root\libs ..."
 & $py -m pip install --disable-pip-version-check -q --upgrade --target "$root\libs" -r "$here\agent\requirements.txt"
 
-foreach ($f in 'painel_agent.py','jarvis_service.py','palmas.py','demo.py','jarvis_persona.md','mcp_painel.py','jarvis_models.py','requirements-jarvis.txt','usage_and_apps.py','taskbar_apps.ps1','audio_helper.ps1','audio_helper.cs','claude_hook.py','claude_statusline.py','requirements.txt','PainelPC.apk') {
+foreach ($f in 'painel_agent.py','jarvis_service.py','palmas.py','voz_fx.py','demo.py','gerar_falas_tablet.py','jarvis_persona.md','mcp_painel.py','jarvis_models.py','requirements-jarvis.txt','usage_and_apps.py','taskbar_apps.ps1','audio_helper.ps1','audio_helper.cs','claude_hook.py','claude_statusline.py','requirements.txt','PainelPC.apk') {
   Copy-Item "$here\agent\$f" "$dest\$f" -Force
 }
 
 if ($Jarvis) {
   Write-Host "Jarvis: instalando bibliotecas de voz em $root\libs-jarvis ..."
   & $py -m pip install --disable-pip-version-check -q --upgrade --target "$root\libs-jarvis" -r "$here\agent\requirements-jarvis.txt"
-  # openWakeWord sem dependencias: as que ele pede a mais (scipy, scikit-learn) so servem para treinar modelos
-  & $py -m pip install --disable-pip-version-check -q --upgrade --target "$root\libs-jarvis" --no-deps openwakeword
   Write-Host "Jarvis: baixando modelos em $root\models (Whisper small + Kokoro) ..."
   & $py "$dest\jarvis_models.py" "$root\models"
   if ($LASTEXITCODE) { Write-Warning 'Jarvis: falha ao baixar ou conferir os modelos.' }

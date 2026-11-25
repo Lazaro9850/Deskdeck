@@ -817,8 +817,9 @@ class TabletLink:
 
 # ------------------------------------------------------------------- Jarvis
 class JarvisProc:
-    """Processo do Jarvis (jarvis_service.py). Iniciado so quando for usado (tablet na aba Jarvis
-    ou botao "Falar"), para nao gastar nada no PC enquanto ninguem o usa. Eventos vao para o tablet."""
+    """Processo do Jarvis (jarvis_service.py). So existe com a aba Jarvis aberta no tablet: abre ao entrar
+    na aba e fecha alguns segundos depois de sair dela (terminando antes a conversa em andamento).
+    Fora da aba, o Jarvis nao gasta nada no PC. Eventos vao para o tablet."""
 
     def __init__(self, on_event):
         self.on_event = on_event
@@ -992,6 +993,32 @@ class Handler(BaseHTTPRequestHandler):
 
 
 # --------------------------------------------------------------------- aplicacao
+def wol_info():
+    """Endereco da placa de rede com cabo (MAC + broadcast da rede): o tablet guarda e usa para
+    ligar o PC pela rede (Wake-on-LAN) quando ele estiver desligado."""
+    try:
+        stats, addrs = psutil.net_if_stats(), psutil.net_if_addrs()
+        best = None
+        for name, lst in addrs.items():
+            st = stats.get(name)
+            if not st or not st.isup or re.search(r"loopback|virtual|vethernet|vpn|bluetooth|wsl", name, re.I):
+                continue
+            mac = next((a.address for a in lst if a.family == psutil.AF_LINK), None)
+            ip4 = next((a for a in lst if a.family == socket.AF_INET and not a.address.startswith("169.254.")), None)
+            if not mac or not ip4 or not ip4.netmask:
+                continue
+            ip = [int(x) for x in ip4.address.split(".")]
+            mask = [int(x) for x in ip4.netmask.split(".")]
+            bcast = ".".join(str(i | (255 ^ m)) for i, m in zip(ip, mask))
+            score = (2 if "ethernet" in name.lower() else 0) + (1 if st.speed >= 100 else 0)
+            if best is None or score > best[0]:
+                best = (score, {"mac": mac.replace("-", ":").upper(), "bcast": bcast})
+        return best[1] if best else None
+    except Exception as e:  # noqa: BLE001
+        log.info("wake-on-lan: %s", e)
+        return None
+
+
 class App:
     def __init__(self, cfg):
         self.cfg = cfg
@@ -1010,7 +1037,7 @@ class App:
         self.proc_page = False      # a aba Processos esta aberta no tablet?
         self.page = 1               # aba aberta no tablet (0 Apps, 1 Painel, 2 Processos, 3 Jarvis)
         self.token = secrets.token_hex(16)  # autoriza as ferramentas do Jarvis (/jarvis/tool)
-        self.jarvis = JarvisProc(lambda ev: self.link.send(dict(ev, t="jarvis")))
+        self.jarvis = JarvisProc(self.on_jarvis_event)
         self.force_procs = threading.Event()
         self.buttons = {b["id"]: b for b in cfg.get("buttons", [])}
 
@@ -1019,7 +1046,8 @@ class App:
         tz = datetime.datetime.now().astimezone().utcoffset().total_seconds() / 60
         btns = [{k: b.get(k) for k in ("id", "label", "icon", "color")} for b in self.cfg.get("buttons", [])]
         self.link.send({"t": "hello", "host": socket.gethostname(), "now": int(time.time() * 1000), "tz": tz,
-                        "cfg": {"buttons": btns, "cols": self.cfg.get("cols", 3), "apps": self.apps.public()}})
+                        "cfg": {"buttons": btns, "cols": self.cfg.get("cols", 3), "apps": self.apps.public()},
+                        "wol": wol_info()})
         self.media.art_key = None  # reenviar a capa
         self.force_media.set()
         self.force_ai.set()
@@ -1037,6 +1065,8 @@ class App:
             self.proc_page = self.page == 2
             if self.page == 3:      # aba Jarvis: inicia o servico (se preciso) e pede o estado atual
                 self.actions.submit(self.jarvis.send, {"cmd": "status"})
+            else:                   # saiu da aba: o Jarvis fecha (depois de terminar a conversa, se houver)
+                self.jarvis_leave()
             if self.page == 1:      # voltou ao Painel: atualiza musica e Claude na hora
                 self.force_media.set()
                 self.force_ai.set()
@@ -1047,12 +1077,30 @@ class App:
             self.force_procs.set()
         elif t == "jarvis":
             cmd = {k: v for k, v in m.items() if k != "t"}
-            if cmd.get("cmd") in ("listen", "stop", "wake", "claps", "status"):
+            if cmd.get("cmd") in ("listen", "stop", "claps", "status"):
                 self.actions.submit(self.jarvis.send, cmd)
         elif t == "launch":
             self.actions.submit(self.do_launch, m.get("id"))
         elif t == "ready":
             log.info("tablet pronto: tela %sx%s", m.get("w"), m.get("h"))
+
+    # ---- Jarvis so com a aba aberta
+    JARVIS_IDLE = ("parado", "erro", "desligado")
+
+    def on_jarvis_event(self, ev):
+        self.link.send(dict(ev, t="jarvis"))
+        if ev.get("ev") == "state" and ev.get("state") in ("parado", "erro") and self.page != 3:
+            self.jarvis_leave()  # terminou a conversa com outra aba aberta
+
+    def jarvis_leave(self, delay=5.0):
+        """Fecha o Jarvis se a aba continuar fechada por alguns segundos (troca rapida de aba nao reinicia)."""
+        def check():
+            if self.page != 3 and self.jarvis.running() and                     self.jarvis.last_state.get("state") in self.JARVIS_IDLE:
+                log.info("aba Jarvis fechada: encerrando o Jarvis")
+                self.jarvis.stop()
+        t = threading.Timer(delay, check)
+        t.daemon = True
+        t.start()
 
     def do_launch(self, aid):
         try:
@@ -1339,15 +1387,6 @@ def main():
     # token das ferramentas do Jarvis: novo a cada execucao, legivel so pela pasta de dados do usuario
     with open(os.path.join(DATA, "agent_token"), "w", encoding="ascii") as f:
         f.write(app.token)
-    # "Hey Jarvis" ligado: o servico precisa estar rodando desde o inicio para escutar a frase
-    try:
-        with open(os.path.join(DATA, "jarvis_state.json"), encoding="utf-8") as f:
-            st = json.load(f)
-            if st.get("wake") or st.get("claps"):
-                app.actions.submit(app.jarvis.send, {"cmd": "status"})
-                log.info("Hey Jarvis/palmas ligado: iniciando o Jarvis")
-    except (OSError, ValueError):
-        pass
     log.info("Painel PC iniciado. adb=%s", app.link.adb)
     threading.Thread(target=srv.serve_forever, name="http", daemon=True).start()
     threading.Thread(target=app.link.loop, name="link", daemon=True).start()
