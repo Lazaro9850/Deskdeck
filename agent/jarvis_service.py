@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Jarvis: assistente de voz do SteamDeck (processo separado do agente do painel).
+Jarvis: assistente de voz do DeskDeck (processo separado do agente do painel).
 
 Comunicacao com o agente (painel_agent.py) por stdin/stdout, uma mensagem JSON por linha.
 

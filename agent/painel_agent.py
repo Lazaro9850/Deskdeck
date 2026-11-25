@@ -1327,6 +1327,15 @@ def main():
         return 1
     app = App(cfg)
     Handler.app = app
+    if "--demo" in sys.argv:  # dados ficticios para prints/GIFs; nenhuma acao no PC
+        import demo
+        demo.install(app)
+        log.info("MODO DEMONSTRACAO: dados ficticios")
+        threading.Thread(target=srv.serve_forever, name="http", daemon=True).start()
+        threading.Thread(target=app.link.loop, name="link", daemon=True).start()
+        threading.Thread(target=app.media_watch, name="media-watch", daemon=True).start()
+        app.sender()
+        return 0
     # token das ferramentas do Jarvis: novo a cada execucao, legivel so pela pasta de dados do usuario
     with open(os.path.join(DATA, "agent_token"), "w", encoding="ascii") as f:
         f.write(app.token)

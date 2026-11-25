@@ -45,7 +45,7 @@ def fetch(url, dest, expected):
         print("ok (ja existe):", os.path.basename(dest))
         return
     tmp = dest + ".part"
-    req = urllib.request.Request(url, headers={"User-Agent": "steamdeck-jarvis/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "deskdeck-jarvis/1.0"})
     with urllib.request.urlopen(req, timeout=60) as r, open(tmp, "wb") as f:
         total = int(r.headers.get("Content-Length") or 0)
         done = 0
