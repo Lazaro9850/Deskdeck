@@ -233,6 +233,40 @@ final class Vigia {
         }
     }
 
+    /** Teste do alto-falante (adb ... --ei beep 1|2|3), volume maximo:
+     *  1 = tom de 1 kHz pelo AudioTrack (musica), 2 = o mesmo pelo canal de alarme, 3 = bipes do sistema (ToneGenerator). */
+    void beep(final int mode) {
+        new Thread(new Runnable() {
+            public void run() {
+                AudioManager am = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+                int stream = mode == 2 ? AudioManager.STREAM_ALARM : mode == 3 ? AudioManager.STREAM_SYSTEM : AudioManager.STREAM_MUSIC;
+                am.setStreamVolume(stream, am.getStreamMaxVolume(stream), 0);
+                Log.i(TAG, "teste de som " + mode + " volume " + am.getStreamVolume(stream) + "/" + am.getStreamMaxVolume(stream));
+                if (mode == 3) {
+                    android.media.ToneGenerator tg = new android.media.ToneGenerator(stream, 100);
+                    for (int i = 0; i < 3; i++) {
+                        tg.startTone(android.media.ToneGenerator.TONE_PROP_BEEP2, 400);
+                        try { Thread.sleep(700); } catch (InterruptedException ignored) {}
+                    }
+                    tg.release();
+                    return;
+                }
+                int sr = 44100, n = sr * 2;
+                short[] pcm = new short[n * 2];
+                for (int i = 0; i < n; i++) {
+                    short v = (short) (Math.sin(2 * Math.PI * 1000 * i / sr) * 30000 * ((i / (sr / 4)) % 2 == 0 ? 1 : 0));
+                    pcm[2 * i] = v; pcm[2 * i + 1] = v;
+                }
+                android.media.AudioTrack at = new android.media.AudioTrack(stream, sr, AudioFormat.CHANNEL_OUT_STEREO,
+                        AudioFormat.ENCODING_PCM_16BIT, pcm.length * 2, android.media.AudioTrack.MODE_STATIC);
+                at.write(pcm, 0, pcm.length);
+                at.play();
+                try { Thread.sleep(2300); } catch (InterruptedException ignored) {}
+                at.release();
+            }
+        }, "vigia-teste").start();
+    }
+
     /** Diagnostico (adb ... --es say pergunta): toca uma fala do APK. */
     void say(final String name) {
         new Thread(new Runnable() {

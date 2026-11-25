@@ -40,3 +40,12 @@ adb shell am start -n br.local.painelpc/.MainActivity --ef clap_level -40     # 
 adb shell am start -n br.local.painelpc/.MainActivity --ez guard_test true    # teste: escuta mesmo com o PC ligado
 adb logcat -s PainelVigia                                                     # ver o nível do microfone e cada estalo
 ```
+
+## Alto-falante do tablet
+O tablet de teste (DL 1603) tem o **alto-falante sem som** (defeito de hardware): o Android entrega o áudio ao chip,
+mas nada sai, nem em bipes de teste no volume máximo. Nesse caso, a pergunta e o "Ligando o computador…" aparecem
+só na tela. Para testar outro aparelho:
+```powershell
+adb shell am start -n br.local.painelpc/.MainActivity --ei beep 1     # 1 = musica, 2 = alarme, 3 = bipes do sistema
+adb shell am start -n br.local.painelpc/.MainActivity --es say pergunta
+```

@@ -88,6 +88,7 @@ public class MainActivity extends Activity implements Link.Listener {
         link.setVigia(vigia);
         vigia.start();
         if (getIntent() != null && getIntent().hasExtra("say")) vigia.say(getIntent().getStringExtra("say"));
+        if (getIntent() != null && getIntent().hasExtra("beep")) vigia.beep(getIntent().getIntExtra("beep", 1));
         dimBars();
     }
 
@@ -108,6 +109,7 @@ public class MainActivity extends Activity implements Link.Listener {
         if (i.hasExtra("cover")) e.putBoolean("cover", i.getBooleanExtra("cover", true));
         if (i.hasExtra("claps")) e.putBoolean("claps", i.getBooleanExtra("claps", true));  // escuta com o PC desligado
         if (i.hasExtra("say") && vigia != null) vigia.say(i.getStringExtra("say"));
+        if (i.hasExtra("beep") && vigia != null) vigia.beep(i.getIntExtra("beep", 1));
         if (i.hasExtra("guard_test")) e.putBoolean("guard_test", i.getBooleanExtra("guard_test", false));
         if (i.hasExtra("clap_level")) e.putFloat("clap_level", i.getFloatExtra("clap_level", -36));
         if (i.hasExtra("clap_rise")) e.putFloat("clap_rise", i.getFloatExtra("clap_rise", 25));
