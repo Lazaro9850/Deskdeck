@@ -75,7 +75,7 @@ def load_cfg():
     d = {"mic": "", "voice": "pm_alex", "voice_fx": 0.5, "speed": 1.05, "threads": 4, "unload_after": 300,
          "max_listen": 15, "silence_end": 0.9, "no_speech_timeout": 7,
          "game_mode": True,
-         "claps": 5, "clap_rise": 25, "clap_level": -36, "clap_decay": 10, "clap_flat": 0.01}
+         "claps": 3, "clap_rise": 25, "clap_level": -36, "clap_decay": 10, "clap_flat": 0.01}
     d.update(c)
     return d
 
@@ -667,7 +667,7 @@ class Jarvis:
             import sounddevice as sd
         from palmas import ClapDetector
         c = self.cfg
-        clap = ClapDetector(c.get("claps", 5), c.get("clap_rise", 25), c.get("clap_level", -36),
+        clap = ClapDetector(c.get("claps", 3), c.get("clap_rise", 25), c.get("clap_level", -36),
                             c.get("clap_decay", 10), c.get("clap_flat", 0.01))
         q = queue.Queue()
         with sd.InputStream(device=self._mic(), samplerate=16000, channels=1, dtype="int16", blocksize=1280,

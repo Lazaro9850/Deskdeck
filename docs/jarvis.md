@@ -14,7 +14,7 @@ a conversa e um botão grande **Falar/Parar**. O plano de implantação está em
 | 2. Ouvir e falar de verdade | ✅ microfone do PC + **Whisper small** (fala → texto) + **Kokoro** (voz PT-BR), tudo local |
 | 3. Cérebro (Claude Code) | ✅ pela sua assinatura do Claude Code (sem chave de API): Haiku para pedidos rápidos, Sonnet para os complexos; pesquisa na web; lembra da conversa por 10 min |
 | 4. Ações no PC (MCP) | ✅ abrir e fechar apps, música, volume, recorte, estado do PC e processos; **fechar app pede Permitir/Negar no tablet** |
-| 5. Chamar sem tocar e modo jogo | ✅ bata **5 palmas** e ele responde com um bipe; com um jogo ou vídeo em tela cheia, a escuta pausa sozinha e os modelos de voz saem da memória |
+| 5. Chamar sem tocar e modo jogo | ✅ bata **3 palmas** e ele responde com um bipe; com um jogo ou vídeo em tela cheia, a escuta pausa sozinha e os modelos de voz saem da memória |
 | 6. Acabamento | ✅ o botão **Parar** interrompe a fala; "para", "chega" ou "obrigado" encerram sem gastar o plano; histórico das últimas conversas salvo no PC |
 
 **O que dá para pedir:** "abre o Discord", "pausa a música", "próxima", "aumenta o volume", "tira um print",
@@ -31,7 +31,7 @@ As respostas usam o **limite do seu plano** (o mesmo das barras da aba Painel). 
 .\install_pc.ps1 -Jarvis   # libs de voz (~320 MB) e modelos (~800 MB, SHA-256 conferido)
 ```
 
-* **5 palmas**: ligue na chave "5 PALMAS" da aba Jarvis (fica salvo). Funciona com a aba Jarvis aberta no tablet. Enquanto você bate, o tablet mostra "palmas: 3 de 5".
+* **3 palmas**: ligue na chave "3 PALMAS" da aba Jarvis (fica salvo). Funciona com a aba Jarvis aberta no tablet. Enquanto você bate, o tablet mostra "palmas: 2 de 3".
   A escuta não usa IA: um estalo só conta se o volume subir de uma vez, cair em menos de 40 ms e tiver som de "chiado".
   Assim, assobio, fala e teclado não contam. Gasta ~0,15% de um núcleo e ~35 MB; em **modo jogo** pausa sozinha.
   O botão Falar funciona sempre.
@@ -43,7 +43,7 @@ As respostas usam o **limite do seu plano** (o mesmo das barras da aba Painel). 
 
 ```json
 "jarvis": { "mic": "AB13X", "voice": "pm_alex", "voice_fx": 0.5, "speed": 1.05, "game_mode": true, "model": "",
-            "claps": 5, "clap_rise": 25, "clap_level": -36, "clap_decay": 10, "clap_flat": 0.01 }
+            "claps": 3, "clap_rise": 25, "clap_level": -36, "clap_decay": 10, "clap_flat": 0.01 }
 ```
 
   `mic` é parte do nome do microfone; se ficar vazio, ele usa o padrão do Windows, ou o headset se o padrão for virtual (DroidCam etc.).
@@ -51,7 +51,7 @@ As respostas usam o **limite do seu plano** (o mesmo das barras da aba Painel). 
   `voice_fx`: efeito de "voz de IA" (sala curta + toque eletrônico): `0` desliga, `0.5` é o padrão, `1` fica bem robótico.
   `game_mode`: pausar a escuta com app em tela cheia (padrão `true`).
   `model`: fixa o modelo (`haiku` ou `sonnet`); vazio = escolhe pelo pedido.
-  `claps`: quantas palmas abrem o Jarvis (padrão 5). Se algo ainda disparar por engano, aumente `clap_decay`
+  `claps`: quantas palmas abrem o Jarvis (padrão 3). Se algo ainda disparar por engano, aumente `clap_decay`
   (queda mínima em 40 ms, em dB) ou `clap_flat` (quanto "chiado" o som precisa ter); se suas palmas não
   forem reconhecidas, diminua `clap_rise` ou `clap_level`.
 

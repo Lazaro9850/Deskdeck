@@ -92,7 +92,7 @@ final class Vigia {
 
     /** Escuta ate 5 palmas (true) ou ate o PC voltar (false). */
     private boolean listenForClaps() {
-        Palmas p = new Palmas(prefs.getInt("claps_n", 5), prefs.getFloat("clap_rise", 25), prefs.getFloat("clap_level", -36),
+        Palmas p = new Palmas(prefs.getInt("claps_n", 3), prefs.getFloat("clap_rise", 25), prefs.getFloat("clap_level", -36),
                 prefs.getFloat("clap_decay", 10), prefs.getFloat("clap_flat", 0.01f));
         AudioRecord mic = openMic();
         short[] buf = new short[1280];

@@ -10,8 +10,9 @@ e o som e um "chiado" (energia espalhada, sem tom). Medido no headset do autor (
   "chiado" (flatness)     > 0,01         ~0,000 (tom puro / voz com tom)
 
 Cada ataque so conta como palma depois de 40 ms, quando da para conferir a queda e o chiado.
-Regra da sequencia: N palmas (padrao 5) em ate 4 s, intervalos de 0,12 a 0,8 s e ritmo
-parecido (diferenca entre o maior e o menor intervalo <= 35% da media).
+Regra da sequencia: N palmas seguidas (padrao 3), cada uma ate 1 s depois da anterior e com ritmo
+parecido (diferenca entre o maior e o menor intervalo <= 50% da media). Uma pausa maior que 1 s
+recomeca a contagem: o contador nunca passa de N e palmas antigas nao atrapalham as novas.
 """
 import numpy as np
 
@@ -19,6 +20,7 @@ SR = 16000
 HOP = 80          # 5 ms
 LOOKBACK = 20     # compara com o nivel mais baixo dos 100 ms anteriores
 REFRACT = 24      # 120 ms sem novo ataque (o eco da mesma palma nao conta)
+MAX_GAP = 1.0     # pausa maior que isso (s) recomeca a sequencia
 CONFIRM = 9       # 45 ms depois do ataque: confere queda e chiado
 FFT = 320         # 20 ms analisados no ataque
 
@@ -31,7 +33,7 @@ def _flatness(seg):
 
 
 class ClapDetector:
-    def __init__(self, claps=5, rise_db=25.0, level_db=-36.0, decay_db=10.0, flat_min=0.01):
+    def __init__(self, claps=3, rise_db=25.0, level_db=-36.0, decay_db=10.0, flat_min=0.01):
         self.need = max(2, int(claps))
         self.rise, self.level = float(rise_db), float(level_db)
         self.decay, self.flat_min = float(decay_db), float(flat_min)
@@ -88,10 +90,12 @@ class ClapDetector:
         return new, fired
 
     def _add(self, now):
-        self.times = [s for s in self.times if now - s <= 4.0] + [now]
-        if len(self.times) >= self.need:
-            iv = np.diff(self.times[-self.need:])
-            if iv.min() >= 0.12 and iv.max() <= 0.8 and (iv.max() - iv.min()) <= 0.35 * iv.mean():
+        if self.times and now - self.times[-1] > MAX_GAP:
+            self.times = []                       # pausa longa: nova sequencia
+        self.times = (self.times + [now])[-self.need:]
+        if len(self.times) == self.need:
+            iv = np.diff(self.times)
+            if iv.min() >= 0.12 and (iv.max() - iv.min()) <= 0.5 * iv.mean():
                 self.times = []
                 return True
         return False

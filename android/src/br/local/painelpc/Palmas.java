@@ -5,7 +5,8 @@ package br.local.painelpc;
  *
  * Uma palma e um estalo: o volume sobe >= 25 dB de uma vez, cai >= 10 dB em 40 ms e o som e
  * "chiado" (flatness >= 0,01). Assobio e fala sao tonais e se sustentam, entao nao contam.
- * Sequencia: N palmas em ate 4 s, intervalos de 0,12 a 0,8 s, ritmo regular.
+ * Sequencia: N palmas seguidas, cada uma ate 1 s depois da anterior, ritmo parecido (<= 50% da media).
+ * Pausa maior que 1 s recomeca a contagem (o contador nunca passa de N).
  * Audio: 16 kHz, mono, PCM 16 bits.
  */
 final class Palmas {
@@ -40,7 +41,7 @@ final class Palmas {
     }
 
     Palmas(int claps, double riseDb, double levelDb, double decayDb, double flat) {
-        need = Math.max(2, claps); rise = riseDb; level = levelDb; decay = decayDb; flatMin = flat;
+        need = Math.max(2, Math.min(claps, 15)); rise = riseDb; level = levelDb; decay = decayDb; flatMin = flat;
         java.util.Arrays.fill(hist, -120);
     }
 
@@ -115,18 +116,17 @@ final class Palmas {
     }
 
     private boolean add(double now) {
-        int k = 0;
-        for (int i = 0; i < nTimes; i++) if (now - times[i] <= 4.0) times[k++] = times[i];
-        nTimes = k;
-        if (nTimes < times.length) times[nTimes++] = now;
-        if (nTimes >= need) {
+        if (nTimes > 0 && now - times[nTimes - 1] > 1.0) nTimes = 0;      // pausa longa: nova sequencia
+        if (nTimes == need) { System.arraycopy(times, 1, times, 0, need - 1); nTimes = need - 1; }
+        times[nTimes++] = now;
+        if (nTimes == need) {
             double mn = 99, mx = 0, sum = 0;
-            for (int i = nTimes - need + 1; i < nTimes; i++) {
+            for (int i = 1; i < need; i++) {
                 double iv = times[i] - times[i - 1];
                 mn = Math.min(mn, iv); mx = Math.max(mx, iv); sum += iv;
             }
             double mean = sum / (need - 1);
-            if (mn >= 0.12 && mx <= 0.8 && (mx - mn) <= 0.35 * mean) { nTimes = 0; return true; }
+            if (mn >= 0.12 && (mx - mn) <= 0.5 * mean) { nTimes = 0; return true; }
         }
         return false;
     }

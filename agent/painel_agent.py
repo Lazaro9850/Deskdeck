@@ -722,12 +722,28 @@ class TabletLink:
             return None, "adb falhou"
         want = self.cfg.get("serial") or ""
         for line in out.splitlines()[1:]:
+            if line.startswith("*"):  # "* daemon started successfully" (o adb acabou de abrir)
+                continue
             parts = line.split()
             if len(parts) >= 2 and (not want or parts[0] == want):
                 if parts[1] == "device":
                     return parts[0], "ok"
                 return None, "tablet " + parts[1] + " (autorize a depuração USB no tablet)"
         return None, "tablet não encontrado no USB"
+
+    def _adb_recover(self):
+        """Logo depois de o PC ligar, o adb as vezes nao enxerga o tablet ate o cabo ser reconectado.
+        Se o tablet sumir por mais de 20 s, reinicia o servidor do adb (no maximo 1 vez por minuto)."""
+        now = time.time()
+        if getattr(self, "missing_since", None) is None:
+            self.missing_since = now
+            return
+        if now - self.missing_since < 20 or now - getattr(self, "last_recover", 0) < 60:
+            return
+        self.last_recover = now
+        log.info("tablet sumiu do adb: reiniciando o servidor do adb")
+        run([self.adb, "kill-server"])
+        run([self.adb, "start-server"], timeout=20)
 
     def _ensure_app(self, serial):
         rc, out = run([self.adb, "-s", serial, "shell", "pm", "path", APP_PKG])
@@ -748,7 +764,9 @@ class TabletLink:
         serial, why = self._device()
         if not serial:
             self._set(why)
+            self._adb_recover()
             return None, None
+        self.missing_since = None
         self.serial = serial
         local = int(self.cfg.get("local_port", 17001))
         rc, out = run([self.adb, "-s", serial, "forward", "tcp:%d" % local, "tcp:7001"])

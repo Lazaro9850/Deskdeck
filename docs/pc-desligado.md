@@ -1,6 +1,6 @@
 # Ligar o PC com palmas (PC desligado)
 
-Com o PC desligado mas na tomada, o **tablet** escuta as palmas pelo próprio microfone. Com **5 palmas**, ele
+Com o PC desligado mas na tomada, o **tablet** escuta as palmas pelo próprio microfone. Com **3 palmas**, ele
 pergunta com a voz do Jarvis: *"Você quer ligar o computador? Não responda nada caso não queira."*
 Se você **falar qualquer coisa** nos 6 segundos seguintes, ele liga o PC pela rede (Wake-on-LAN). Se ficar em silêncio,
 ele não liga.

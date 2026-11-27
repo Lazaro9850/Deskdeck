@@ -233,7 +233,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
       <div id="jlines"><div class="jempty">Toque em <b>Falar</b> e fale no microfone do PC.<br>Pergunte qualquer coisa: contas, clima, notícias, ideias…</div></div>
     </div>
     <div id="jtalk"><svg viewBox="0 0 24 24"><path fill="#00141a" id="jtalkic" d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3zm-7 9h2a5 5 0 0 0 10 0h2a7 7 0 0 1-6 6.9V21h-2v-3.1A7 7 0 0 1 5 11z"/></svg><span id="jtalktx">Falar</span></div>
-    <div id="jclap" class="jsw"><div class="k">5 PALMAS</div><div class="v" id="jclapv">Desligado</div></div>
+    <div id="jclap" class="jsw"><div class="k">3 PALMAS</div><div class="v" id="jclapv">Desligado</div></div>
   </div>
 </div></div>
 
@@ -697,7 +697,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
       setText($('jst'), s[0]);
       var dica = s[1];
       if (!dica && m.state === 'parado') {
-        dica = (m.claps && !m.game) ? 'bata 5 palmas ou toque em Falar' : 'toque em Falar';
+        dica = (m.claps && !m.game) ? 'bata 3 palmas ou toque em Falar' : 'toque em Falar';
       }
       setText($('jdet'), m.detail || dica);
       $('jst').style.color = 'rgb(' + s[2].join(',') + ')';
@@ -839,7 +839,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     $('bwake').style.display = m.known && m.st !== 'idle' ? 'block' : 'none';
     if (m.st === 'idle') { if (OFF0) { $('offbig').innerHTML = OFF0[0]; $('offtx').innerHTML = OFF0[1]; } return; }
     var semWifi = 'O tablet está sem Wi-Fi: conecte-o à mesma rede do PC para ligar pela rede.';
-    if (m.st === 'listen') offText('PC desligado', m.wifi ? 'Bata 5 palmas para ligar o computador.' : semWifi);
+    if (m.st === 'listen') offText('PC desligado', m.wifi ? 'Bata 3 palmas para ligar o computador.' : semWifi);
     else if (m.st === 'clap') {
       offText('PC desligado', 'palmas: ' + m.x.n + ' de ' + m.x.need);
       guardT = setTimeout(function () { onGuard({ st: 'listen', wifi: m.wifi, known: m.known }); }, 3500);
