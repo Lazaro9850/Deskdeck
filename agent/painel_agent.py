@@ -923,6 +923,26 @@ class Approvals:
         self.lock = threading.Lock()
 
     @staticmethod
+    def plain(data, tool, detail):
+        """Pedido em portugues simples para o tablet: (o que quer fazer, em que)."""
+        ti = data.get("tool_input") if isinstance(data.get("tool_input"), dict) else {}
+        verbos = {"Fechar um app": "fechar um app", "Bash": "rodar um comando no terminal",
+                  "PowerShell": "rodar um comando no PowerShell", "Write": "criar um arquivo",
+                  "Edit": "editar um arquivo", "MultiEdit": "editar um arquivo", "NotebookEdit": "editar um notebook",
+                  "Read": "ler um arquivo", "WebFetch": "abrir um site", "WebSearch": "pesquisar na internet",
+                  "Glob": "procurar arquivos", "Grep": "procurar dentro dos arquivos", "Task": "abrir um ajudante",
+                  "Agent": "abrir um ajudante"}
+        acao = verbos.get(tool) or "usar a ferramenta " + tool.split("__")[-1].replace("_", " ")
+        alvo = ti.get("description") or ti.get("nome") or ti.get("file_path") or ti.get("url") or ti.get("query")             or ti.get("pattern") or ""
+        if tool == "Bash" and ti.get("description"):
+            alvo = ti["description"]
+        elif not alvo:
+            alvo = detail
+        if isinstance(alvo, str) and len(alvo) > 160:
+            alvo = alvo[:157] + "…"
+        return acao, str(alvo)
+
+    @staticmethod
     def describe(data):
         tool = data.get("tool_name") or "?"
         ti = data.get("tool_input") or {}
@@ -949,8 +969,10 @@ class Approvals:
         with self.lock:
             self.pending[rid] = {"ev": ev, "decision": None}
         tool, detail = self.describe(data)
+        acao, alvo = self.plain(data, tool, detail)
         cwd = data.get("cwd") or ""
         self.app.link.send({"t": "approval", "id": rid, "tool": tool, "detail": detail, "cwd": cwd,
+                            "acao": acao, "alvo": alvo,
                             "timeout": timeout,
                             "agent": "Jarvis" if os.path.basename(cwd.rstrip("\\/")).lower() == "jarvis"
                             else (data.get("agent") or "Claude Code")})

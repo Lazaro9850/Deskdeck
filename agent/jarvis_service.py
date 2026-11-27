@@ -146,7 +146,7 @@ class Jarvis:
         self.cfg = load_cfg()
         self.state = "parado"
         st = load_state()
-        self.claps = bool(st.get("claps"))  # abrir com palmas
+        self.claps = bool(st.get("claps", True))  # abrir com palmas (sempre ligado; sem chave na tela)
         self.model = "haiku"
         self.game = False
         self.cancel = threading.Event()
