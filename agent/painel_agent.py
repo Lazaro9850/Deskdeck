@@ -722,12 +722,28 @@ class TabletLink:
             return None, "adb falhou"
         want = self.cfg.get("serial") or ""
         for line in out.splitlines()[1:]:
+            if line.startswith("*"):  # "* daemon started successfully" (o adb acabou de abrir)
+                continue
             parts = line.split()
             if len(parts) >= 2 and (not want or parts[0] == want):
                 if parts[1] == "device":
                     return parts[0], "ok"
                 return None, "tablet " + parts[1] + " (autorize a depuração USB no tablet)"
         return None, "tablet não encontrado no USB"
+
+    def _adb_recover(self):
+        """Logo depois de o PC ligar, o adb as vezes nao enxerga o tablet ate o cabo ser reconectado.
+        Se o tablet sumir por mais de 20 s, reinicia o servidor do adb (no maximo 1 vez por minuto)."""
+        now = time.time()
+        if getattr(self, "missing_since", None) is None:
+            self.missing_since = now
+            return
+        if now - self.missing_since < 20 or now - getattr(self, "last_recover", 0) < 60:
+            return
+        self.last_recover = now
+        log.info("tablet sumiu do adb: reiniciando o servidor do adb")
+        run([self.adb, "kill-server"])
+        run([self.adb, "start-server"], timeout=20)
 
     def _ensure_app(self, serial):
         rc, out = run([self.adb, "-s", serial, "shell", "pm", "path", APP_PKG])
@@ -748,7 +764,9 @@ class TabletLink:
         serial, why = self._device()
         if not serial:
             self._set(why)
+            self._adb_recover()
             return None, None
+        self.missing_since = None
         self.serial = serial
         local = int(self.cfg.get("local_port", 17001))
         rc, out = run([self.adb, "-s", serial, "forward", "tcp:%d" % local, "tcp:7001"])
@@ -905,6 +923,26 @@ class Approvals:
         self.lock = threading.Lock()
 
     @staticmethod
+    def plain(data, tool, detail):
+        """Pedido em portugues simples para o tablet: (o que quer fazer, em que)."""
+        ti = data.get("tool_input") if isinstance(data.get("tool_input"), dict) else {}
+        verbos = {"Fechar um app": "fechar um app", "Bash": "rodar um comando no terminal",
+                  "PowerShell": "rodar um comando no PowerShell", "Write": "criar um arquivo",
+                  "Edit": "editar um arquivo", "MultiEdit": "editar um arquivo", "NotebookEdit": "editar um notebook",
+                  "Read": "ler um arquivo", "WebFetch": "abrir um site", "WebSearch": "pesquisar na internet",
+                  "Glob": "procurar arquivos", "Grep": "procurar dentro dos arquivos", "Task": "abrir um ajudante",
+                  "Agent": "abrir um ajudante"}
+        acao = verbos.get(tool) or "usar a ferramenta " + tool.split("__")[-1].replace("_", " ")
+        alvo = ti.get("description") or ti.get("nome") or ti.get("file_path") or ti.get("url") or ti.get("query")             or ti.get("pattern") or ""
+        if tool == "Bash" and ti.get("description"):
+            alvo = ti["description"]
+        elif not alvo:
+            alvo = detail
+        if isinstance(alvo, str) and len(alvo) > 160:
+            alvo = alvo[:157] + "…"
+        return acao, str(alvo)
+
+    @staticmethod
     def describe(data):
         tool = data.get("tool_name") or "?"
         ti = data.get("tool_input") or {}
@@ -931,8 +969,10 @@ class Approvals:
         with self.lock:
             self.pending[rid] = {"ev": ev, "decision": None}
         tool, detail = self.describe(data)
+        acao, alvo = self.plain(data, tool, detail)
         cwd = data.get("cwd") or ""
         self.app.link.send({"t": "approval", "id": rid, "tool": tool, "detail": detail, "cwd": cwd,
+                            "acao": acao, "alvo": alvo,
                             "timeout": timeout,
                             "agent": "Jarvis" if os.path.basename(cwd.rstrip("\\/")).lower() == "jarvis"
                             else (data.get("agent") or "Claude Code")})

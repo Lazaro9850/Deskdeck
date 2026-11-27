@@ -21,9 +21,9 @@
 | <img src="docs/img/aba-apps.png" width="400"> | **Apps**: os apps fixados na sua barra de tarefas, com os ícones reais. Um toque abre no PC; um traço marca os que estão abertos. |
 | <img src="docs/img/aba-painel.png" width="400"> | **Painel**: CPU, GPU, RAM, disco e rede em tempo real · música tocando com controles · uso do **Claude Code** (sessão e semanal) · botões de volume, mudo e recorte. |
 | <img src="docs/img/aba-processos.png" width="400"> | **Processos**: os 7 programas que mais pesam, como no Gerenciador de Tarefas. Toque no cabeçalho para ordenar. |
-| <img src="docs/img/jarvis.gif" width="400"> | **Jarvis**: assistente de voz em português. Com a aba aberta, bata **5 palmas** ou toque em Falar: ele abre apps, controla música e volume, tira print, diz o que está pesando no PC e responde perguntas usando o Claude Code. |
+| <img src="docs/img/jarvis.gif" width="400"> | **Jarvis**: assistente de voz em português. Com a aba aberta, bata **3 palmas** ou toque em Falar: ele abre apps, controla música e volume, tira print, diz o que está pesando no PC e responde perguntas usando o Claude Code. |
 
-**Com o PC desligado**, o tablet continua de guarda: bata 5 palmas e ele pergunta, com a voz do Jarvis, se deve
+**Com o PC desligado**, o tablet continua de guarda: bata 3 palmas e ele pergunta, com a voz do Jarvis, se deve
 [ligar o computador](docs/pc-desligado.md) (Wake-on-LAN).
 
 E também: tela cheia de verdade (cobre a barra do Android), inicia sozinho com o tablet e com o Windows, pede

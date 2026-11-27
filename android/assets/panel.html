@@ -5,23 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, target-densitydpi=device-dpi">
 <title>DeskDeck</title>
 <style>
-/* ES5 + CSS compativel com o WebKit do Android 4.1: sem flexbox moderno, sem variaveis CSS.
-   Alto contraste: fundo quase preto, cartoes claros com borda forte, texto branco/cinza claro. */
-html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#030507;color:#ffffff;
-  font-family:"Roboto","Droid Sans",Arial,sans-serif;-webkit-user-select:none;-webkit-tap-highlight-color:rgba(0,0,0,0)}
+/* DeskDeck · visual HUD futurista.
+   Compativel com o WebKit do Android 4.1 (sem flexbox moderno nem variaveis CSS; prefixos -webkit-).
+   Fundo com grade sutil, cartoes de "vidro" com cantos marcados na cor da area, numeros com brilho.
+   Cores: ciano #4fd8f0 (sistema), verde #46e08f (musica), roxo #b18cff (Claude), ambar #ffc233 (atencao). */
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;color:#ffffff;
+  font-family:"Roboto","Droid Sans",Arial,sans-serif;-webkit-user-select:none;-webkit-tap-highlight-color:rgba(0,0,0,0);
+  background:#03060a}
 *{box-sizing:border-box;-webkit-box-sizing:border-box}
-#top{position:absolute;left:0;right:0;top:0;height:4.4rem;border-bottom:2px solid #34465a;z-index:5;background:#030507}
-#brand{position:absolute;left:1rem;top:0;line-height:4.4rem;font-size:1.8rem;font-weight:bold;letter-spacing:.1rem;color:#ffffff}
-#brand b{color:#4fd8f0}
-#link{position:absolute;left:14rem;top:0;line-height:4.4rem;font-size:1.4rem;font-weight:bold;color:#c9d4de;white-space:nowrap;max-width:6.4rem;overflow:hidden;text-overflow:ellipsis}
-#dot{display:inline-block;width:1.2rem;height:1.2rem;border-radius:.6rem;background:#ff4d4d;margin-right:.6rem;vertical-align:middle;position:relative;top:-.15rem;border:2px solid #030507}
+
+/* ---- barra de cima */
+#top{position:absolute;left:0;right:0;top:0;height:4.4rem;z-index:5;
+  background:#08111a;border-bottom:1px solid rgba(79,216,240,.45)}
+#brand{position:absolute;left:1.1rem;top:0;line-height:4.4rem;font-size:1.75rem;font-weight:bold;letter-spacing:.32rem;color:#ffffff}
+#brand:before{content:'';display:inline-block;width:.9rem;height:.9rem;margin-right:.8rem;border:2px solid #4fd8f0;
+  -webkit-transform:rotate(45deg);position:relative;top:-.1rem;-webkit-box-shadow:0 0 .8rem rgba(79,216,240,.8)}
+#brand b{color:#4fd8f0;text-shadow:0 0 1rem rgba(79,216,240,.7)}
+#link{position:absolute;left:15.4rem;top:0;line-height:4.4rem;font-size:1.25rem;font-weight:bold;letter-spacing:.12rem;color:#9fdcec;white-space:nowrap;max-width:6rem;overflow:hidden;text-overflow:ellipsis}
+#dot{display:inline-block;width:1rem;height:1rem;border-radius:.5rem;background:#ff4d4d;margin-right:.6rem;vertical-align:middle;position:relative;top:-.1rem}
 #dot.on{background:#3cff8a}
-#tabs{position:absolute;left:50%;top:.5rem;width:39rem;margin-left:-19.5rem;height:3.4rem;background:#0d141c;border:2px solid #4a5d72;border-radius:1.7rem}
-.tab{position:absolute;top:0;width:25%;height:100%;line-height:3rem;text-align:center;font-size:1.45rem;font-weight:bold;color:#9fb0c2;border-radius:1.6rem}
+#tabs{position:absolute;left:50%;top:.55rem;width:38rem;margin-left:-19rem;height:3.3rem;background:rgba(8,16,24,.9);border:1px solid rgba(79,216,240,.4);border-radius:1.65rem}
+.tab{position:absolute;top:0;width:25%;height:100%;line-height:3.1rem;text-align:center;font-size:1.25rem;font-weight:bold;letter-spacing:.06rem;color:#a9bccd;border-radius:1.6rem;text-transform:uppercase}
 #tab0{left:0}#tab1{left:25%}#tab2{left:50%}#tab3{right:0}
-.tab.sel{background:#4fd8f0;color:#00141a}
-#clock{position:absolute;right:1rem;top:0;line-height:4.4rem;font-size:2.8rem;font-weight:bold;color:#ffffff}
-#date{position:absolute;right:10.4rem;top:0;line-height:4.4rem;font-size:1.5rem;font-weight:bold;color:#c9d4de;white-space:nowrap}
+.tab.sel{background:-webkit-linear-gradient(top,#7ce6f6,#2fbfdc);color:#00141a;-webkit-box-shadow:0 0 1.2rem rgba(79,216,240,.65)}
+#clock{position:absolute;right:1.1rem;top:0;line-height:4.4rem;font-size:2.7rem;font-weight:bold;letter-spacing:.1rem;color:#ffffff}
+#date{position:absolute;right:10.6rem;top:0;line-height:4.4rem;font-size:1.3rem;font-weight:bold;letter-spacing:.06rem;color:#9fdcec;white-space:nowrap}
 
 #pages{position:absolute;left:0;right:0;top:4.4rem;bottom:0;overflow:hidden}
 #strip{position:absolute;left:0;top:0;bottom:0;width:400%;-webkit-transform:translate3d(0,0,0)}
@@ -29,132 +37,144 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 .page{position:absolute;top:0;bottom:0;width:25%}
 #p1{left:0}#p2{left:25%}#p3{left:50%}#p4{left:75%}
 
-/* ---- pagina 4: Jarvis */
-#jorbw{left:.8rem;top:.8rem;width:33rem;bottom:.8rem}
-#jorb{position:absolute;left:50%;top:1.6rem;width:28rem;height:28rem;margin-left:-14rem}
-#jst{position:absolute;left:0;right:0;top:30.6rem;text-align:center;font-size:2.6rem;font-weight:bold;color:#ffffff}
-#jdet{position:absolute;left:1rem;right:1rem;top:34.4rem;text-align:center;font-size:1.35rem;font-weight:bold;color:#9fb0c2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#jconv{left:34.6rem;top:.8rem;right:.8rem;bottom:10.4rem;padding:1rem 1.3rem}
-#jchips{position:absolute;right:1.3rem;top:.9rem;font-size:1.15rem;font-weight:bold;color:#9fb0c2;white-space:nowrap}
-#jchips b{display:inline-block;margin-left:.5rem;padding:.2rem .8rem;border:2px solid #4a5d72;border-radius:1rem;color:#c9d4de}
-#jlines{position:absolute;left:1.3rem;right:1.3rem;top:3.6rem;bottom:1rem;overflow:hidden}
-.jx{margin-bottom:1.2rem}
-.jx .who{font-size:1.1rem;font-weight:bold;letter-spacing:.12rem;color:#9fb0c2}
-.jx .you{font-size:1.7rem;font-weight:bold;color:#ffffff;margin-top:.2rem}
-.jx .jar{font-size:1.7rem;font-weight:bold;color:#4fd8f0;margin-top:.2rem;line-height:2.2rem}
-.jempty{font-size:1.5rem;color:#9fb0c2;line-height:2.3rem}
-#jtalk{position:absolute;left:34.6rem;right:15rem;bottom:.8rem;height:8.8rem;border-radius:1.2rem;background:#4fd8f0;border:2px solid #4fd8f0;text-align:center}
-#jtalk svg{position:absolute;left:2rem;top:2.2rem;width:4.4rem;height:4.4rem}
-#jtalk span{display:block;margin-left:5rem;line-height:8.4rem;font-size:2.6rem;font-weight:bold;color:#00141a}
-#jtalk.on{background:#5a1a1f;border-color:#ff5a55}
-#jtalk.on span{color:#ffb3b0;font-size:2.1rem}
-#jtalk.dn{opacity:.75}
-.jsw{position:absolute;right:.8rem;bottom:.8rem;width:13.4rem;height:8.8rem;border-radius:1.2rem;background:#18222e;border:2px solid #3b4d61;text-align:center}
-.jsw .k{margin-top:1.6rem;font-size:1.2rem;font-weight:bold;letter-spacing:.1rem;color:#9fb0c2}
-.jsw .v{margin-top:.5rem;font-size:1.9rem;font-weight:bold;color:#ffffff}
-.jsw.on{border-color:#3cff8a}.jsw.on .v{color:#3cff8a}
-.jsw.dn{background:#2b3a4b}
+/* ---- cartoes de vidro com cantos de HUD */
+.card{position:absolute;border:1px solid rgba(79,216,240,.28);border-radius:1rem;overflow:hidden;
+  background:#0f1a26}
+.card:before,.card:after{content:'';position:absolute;width:1.8rem;height:1.8rem;border-color:#4fd8f0;border-style:solid;z-index:2}
+.card:before{left:0;top:0;border-width:2px 0 0 2px;border-top-left-radius:1rem}
+.card:after{right:0;bottom:0;border-width:0 2px 2px 0;border-bottom-right-radius:1rem}
+.h{font-size:1.25rem;font-weight:bold;letter-spacing:.28rem;color:#4fd8f0;text-transform:uppercase}
+.h:before{content:'';display:inline-block;width:.6rem;height:.6rem;margin-right:.8rem;background:#4fd8f0;-webkit-transform:rotate(45deg);position:relative;top:-.15rem}
+
+/* ---- pagina 1: apps da barra de tarefas */
+#apps{position:absolute;left:.8rem;right:.8rem;top:.8rem;bottom:.8rem}
+.app{position:absolute;border:1px solid rgba(79,216,240,.25);border-radius:1rem;text-align:center;overflow:hidden;background:#0f1a26}
+.app.dn{border-color:#ffffff;background:rgba(40,64,86,.95)}
+.app img{position:absolute;left:50%;top:14%}
+.app .al{position:absolute;left:.4rem;right:.4rem;bottom:1.9rem;font-size:1.8rem;font-weight:bold;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app .run{position:absolute;left:50%;bottom:.8rem;width:6.4rem;margin-left:-3.2rem;height:.45rem;border-radius:.25rem;background:#4fd8f0;display:none}
+.app.on{border-color:rgba(79,216,240,.8)}
+.app.on .run{display:block}
+.empty{position:absolute;left:0;right:0;top:45%;text-align:center;font-size:1.6rem;letter-spacing:.1rem;color:#9fdcec}
+
+/* ---- pagina 2: painel */
+#sys{left:.8rem;top:.8rem;width:28rem;bottom:.8rem;padding:1.1rem 1.4rem}
+#med{left:29.6rem;top:.8rem;width:31rem;height:17rem;padding:1rem 1.4rem;border-color:rgba(70,224,143,.3)}
+#cl{left:29.6rem;top:18.6rem;width:31rem;bottom:.8rem;padding:1rem 1.4rem;border-color:rgba(177,140,255,.32)}
+#med:before,#med:after{border-color:#46e08f}#med .h{color:#46e08f}#med .h:before{background:#46e08f}
+#cl:before,#cl:after{border-color:#b18cff}#cl .h{color:#b18cff}#cl .h:before{background:#b18cff}
+#keys{position:absolute;left:61.4rem;top:.8rem;right:.8rem;bottom:.8rem}
+
+.m{position:relative;height:9.4rem}
+.m .lbl{position:absolute;left:0;top:0;font-size:1.6rem;letter-spacing:.24rem;color:#9fdcec;font-weight:bold}
+.m .val{position:absolute;right:0;top:-.7rem;font-size:3.6rem;font-weight:bold}
+.m .sub{position:absolute;left:0;top:2.3rem;right:7.4rem;font-size:1.25rem;color:#c3d3e0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m canvas{position:absolute;left:0;top:4.4rem;width:100%;height:4.3rem;border-radius:.5rem;border:1px solid rgba(79,216,240,.18)}
+.bar{position:relative;height:1.2rem;border-radius:.6rem;background:#16222f;border:1px solid #23435a;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:.6rem;background:#4fd8f0}
+.row{position:relative;height:5.4rem}
+.row .lbl{position:absolute;left:0;top:0;font-size:1.6rem;letter-spacing:.24rem;color:#9fdcec;font-weight:bold}
+.row .val{position:absolute;right:0;top:0;font-size:1.6rem;font-weight:bold;color:#ffffff}
+.row .bar{position:absolute;left:0;right:0;top:2.8rem}
+.foot{position:absolute;left:1.4rem;right:1.4rem;bottom:1rem;padding-top:.8rem;border-top:1px solid rgba(79,216,240,.22);font-size:1.4rem;color:#9fdcec;white-space:nowrap;overflow:hidden;letter-spacing:.06rem}
+.foot b{color:#ffffff}
+
+#art{position:absolute;left:1.4rem;top:3rem;width:6.6rem;height:6.6rem;border-radius:.7rem;background:#08111a;border:1px solid rgba(70,224,143,.4);overflow:hidden}
+#art img{width:100%;height:100%;display:none}
+#art svg{position:absolute;left:1.6rem;top:1.6rem;width:3.2rem;height:3.2rem}
+#mtitle{position:absolute;left:9.3rem;right:1.4rem;top:2.9rem;font-size:1.95rem;font-weight:bold;line-height:2.3rem;max-height:2.3rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#martist{position:absolute;left:9.3rem;right:1.4rem;top:5.5rem;font-size:1.55rem;font-weight:bold;color:#c3d3e0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mapp{position:absolute;left:9.3rem;right:1.4rem;top:7.7rem;font-size:1.2rem;letter-spacing:.12rem;color:#46e08f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+#mprog{position:absolute;left:1.4rem;right:1.4rem;top:10.4rem;height:.8rem}
+#mprog i{background:#46e08f!important}
+#mtime{display:none}
+#mctl{position:absolute;left:1.4rem;right:1.4rem;bottom:.6rem;height:3.6rem}
+.cb{position:absolute;top:0;height:3.6rem;border-radius:1.8rem;background:#16222f;border:1px solid rgba(70,224,143,.45);text-align:center}
+.cb svg{width:2.3rem;height:2.3rem;margin-top:.55rem;fill:#ffffff}
+#bprev{left:0;width:8.4rem}#bplay{left:50%;margin-left:-5.6rem;width:11.2rem;background:-webkit-linear-gradient(top,#7cf0b0,#2fc477);border-color:#46e08f;-webkit-box-shadow:0 0 1.1rem rgba(70,224,143,.55)}#bplay svg{fill:#00180b}#bnext{right:0;width:8.4rem}
+.cb.dn{background:rgba(70,224,143,.25)}#bplay.dn{background:#2fa766}
+
+/* cartao do Claude: sessao (5h) e semanal */
+#clsrc{position:absolute;right:1.4rem;top:1.1rem;font-size:1.1rem;font-weight:bold;letter-spacing:.08rem;color:#c4a8ff;white-space:nowrap}
+.cq{position:absolute;left:1.4rem;right:1.4rem;height:10rem}
+#cq0{top:3.3rem}#cq1{top:13.3rem}
+.cq .k{position:absolute;left:0;top:0;font-size:1.75rem;font-weight:bold;color:#ffffff}
+.cq .v{position:absolute;right:0;top:-.6rem;font-size:3rem;font-weight:bold;color:#ffffff}
+.cq .bar{position:absolute;left:0;right:0;top:3.2rem;height:1.5rem;border-radius:.75rem;border-color:rgba(177,140,255,.3)}
+.cq .bar i{border-radius:.75rem;background:#b18cff}
+.cq .r{position:absolute;left:0;right:0;top:5.4rem;font-size:1.35rem;font-weight:bold;color:#d2bfff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#clchart{display:none}
+
+.key{position:absolute;border:1px solid rgba(79,216,240,.25);border-radius:1rem;text-align:center;overflow:hidden;background:#0f1a26}
+.key .ic{position:absolute;left:50%;top:18%;width:4.2rem;height:4.2rem;margin-left:-2.1rem}
+.key .ic svg{width:100%;height:100%}
+.key .tx{position:absolute;left:.3rem;right:.3rem;bottom:.8rem;font-size:1.3rem;font-weight:bold;letter-spacing:.12rem;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+.key .st{position:absolute;left:1.4rem;top:0;right:1.4rem;height:.35rem;border-radius:0 0 .3rem .3rem}
+.key.dn{border-color:#ffffff;background:rgba(40,64,86,.95)}
+.key.on{border-color:#ff4d4d;background:rgba(90,20,26,.95)}
 
 /* ---- pagina 3: processos (como o Gerenciador de Tarefas) */
 #pt{left:.8rem;top:.8rem;right:.8rem;bottom:.8rem}
 #ptab{width:100%;border-collapse:collapse;table-layout:fixed}
-#ptab th{height:4.8rem;background:#0d141c;border-bottom:2px solid #4a5d72;border-left:1px solid #26323f;text-align:right;padding:0 .9rem;vertical-align:middle;white-space:nowrap;overflow:hidden}
+#ptab th{height:4.8rem;background:#12212e;border-bottom:1px solid rgba(79,216,240,.45);border-left:1px solid rgba(79,216,240,.12);text-align:right;padding:0 .9rem;vertical-align:middle;white-space:nowrap;overflow:hidden}
 #ptab th .tv{display:block;font-size:2rem;font-weight:bold;color:#ffffff;height:2.1rem}
-#ptab th .tl{display:block;font-size:1.25rem;font-weight:bold;color:#9fb0c2}
-#ptab th.s{background:#13324a}
+#ptab th .tl{display:block;font-size:1.1rem;font-weight:bold;letter-spacing:.16rem;color:#9fdcec;text-transform:uppercase}
+#ptab th.s{background:#173445;-webkit-box-shadow:inset 0 -.3rem 0 #4fd8f0}
 #ptab th.s .tl{color:#4fd8f0}
 #ptab .l{text-align:left}
-#ptab td{padding:0 .9rem;border-bottom:2px solid #26323f;border-left:1px solid #26323f;font-size:1.95rem;font-weight:bold;color:#ffffff;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#ptab td.nm{font-size:2rem}
+#ptab td{padding:0 .9rem;border-bottom:1px solid rgba(79,216,240,.1);border-left:1px solid rgba(79,216,240,.1);font-size:1.9rem;font-weight:bold;color:#ffffff;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ptab tbody tr:nth-child(even) td{background-color:#121e2b}
+#ptab td.nm{font-size:1.95rem}
 #ptab td.sm{font-size:1.4rem}
-#ptab td.dim{color:#9fb0c2;font-weight:normal}
+#ptab td.dim{color:#9fb6c8;font-weight:normal}
 
-/* ---- pagina 1: apps da barra de tarefas */
-#apps{position:absolute;left:.8rem;right:.8rem;top:.8rem;bottom:.8rem}
-.app{position:absolute;background:#18222e;border:2px solid #3b4d61;border-radius:1.2rem;text-align:center;overflow:hidden}
-.app.dn{background:#2b3a4b;border-color:#4fd8f0}
-.app img{position:absolute;left:50%;top:14%}
-.app .al{position:absolute;left:.4rem;right:.4rem;bottom:1.8rem;font-size:1.9rem;font-weight:bold;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.app .run{position:absolute;left:50%;bottom:.7rem;width:6rem;margin-left:-3rem;height:.6rem;border-radius:.3rem;background:#4fd8f0;display:none}
-.app.on{border-color:#4fd8f0}
-.app.on .run{display:block}
-.empty{position:absolute;left:0;right:0;top:45%;text-align:center;font-size:1.7rem;color:#c9d4de}
+/* ---- pagina 4: Jarvis (so o reator, o estado e o botao Falar) */
+#jcard{left:.8rem;top:.8rem;right:.8rem;bottom:.8rem;background:#0a131d}
+#jorb{position:absolute;left:50%;top:1.2rem;width:24rem;height:24rem;margin-left:-12rem}
+#jst{position:absolute;left:0;right:0;top:25.3rem;text-align:center;font-size:2.6rem;font-weight:bold;letter-spacing:.3rem;color:#ffffff;text-transform:uppercase;text-shadow:0 0 1.4rem rgba(79,216,240,.7)}
+#jdet{position:absolute;left:2rem;right:2rem;top:29rem;text-align:center;font-size:1.3rem;font-weight:bold;letter-spacing:.14rem;color:#9fdcec;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+#jchips{position:absolute;left:1.4rem;top:1.3rem;font-size:1.15rem;font-weight:bold;letter-spacing:.14rem;white-space:nowrap;text-transform:uppercase}
+#jchips b{display:inline-block;margin-right:.6rem;padding:.35rem 1rem;border:1px solid rgba(79,216,240,.55);border-radius:1.2rem;color:#9fdcec;background:rgba(79,216,240,.08)}
+#jchips #jgame{border-color:#ffc233;color:#ffc233;background:rgba(255,194,51,.1)}
+#jtalk{position:absolute;left:50%;bottom:1.4rem;width:32rem;margin-left:-16rem;height:5.6rem;border-radius:2.8rem;text-align:center;
+  background:-webkit-linear-gradient(top,#7ce6f6,#2fbfdc);border:1px solid #4fd8f0;-webkit-box-shadow:0 0 1.8rem rgba(79,216,240,.55)}
+#jtalk svg{position:absolute;left:9rem;top:1.2rem;width:3.2rem;height:3.2rem}
+#jtalk span{display:block;line-height:5.4rem;font-size:2.2rem;font-weight:bold;letter-spacing:.3rem;color:#00141a;padding-left:3rem;text-transform:uppercase}
+#jtalk.on{background:-webkit-linear-gradient(top,#ff7a72,#d9342c);border-color:#ff5a55;-webkit-box-shadow:0 0 1.8rem rgba(255,90,85,.6)}
+#jtalk.on span{color:#1c0000}
+#jtalk.dn{opacity:.75}
 
-/* ---- pagina 2: painel */
-.card{position:absolute;background:#141d27;border:2px solid #34465a;border-radius:1rem;overflow:hidden}
-.h{font-size:1.45rem;font-weight:bold;letter-spacing:.15rem;color:#9fb0c2;text-transform:uppercase}
-#sys{left:.8rem;top:.8rem;width:28rem;bottom:.8rem;padding:1rem 1.3rem}
-#med{left:29.6rem;top:.8rem;width:31rem;height:17rem;padding:1rem 1.3rem}
-#cl{left:29.6rem;top:18.6rem;width:31rem;bottom:.8rem;padding:1rem 1.3rem}
-#keys{position:absolute;left:61.4rem;top:.8rem;right:.8rem;bottom:.8rem}
-
-.m{position:relative;height:9.4rem}
-.m .lbl{position:absolute;left:0;top:0;font-size:2rem;color:#ffffff;font-weight:bold}
-.m .val{position:absolute;right:0;top:-.6rem;font-size:3.5rem;font-weight:bold}
-.m .sub{position:absolute;left:0;top:2.5rem;font-size:1.4rem;color:#b8c4d0;white-space:nowrap}
-.m canvas{position:absolute;left:0;top:4.5rem;width:100%;height:4.3rem}
-.bar{position:relative;height:1.2rem;border-radius:.6rem;background:#2a3746;overflow:hidden}
-.bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:.6rem;background:#4fd8f0}
-.row{position:relative;height:5.4rem}
-.row .lbl{position:absolute;left:0;top:0;font-size:1.9rem;color:#ffffff;font-weight:bold}
-.row .val{position:absolute;right:0;top:.3rem;font-size:1.6rem;font-weight:bold;color:#e6edf3}
-.row .bar{position:absolute;left:0;right:0;top:2.9rem}
-.foot{position:absolute;left:1.3rem;right:1.3rem;bottom:1rem;font-size:1.5rem;color:#b8c4d0;white-space:nowrap;overflow:hidden}
-.foot b{color:#ffffff}
-
-#art{position:absolute;left:1.3rem;top:3.1rem;width:6.6rem;height:6.6rem;border-radius:.7rem;background:#223040;border:2px solid #3b4d61;overflow:hidden}
-#art img{width:100%;height:100%;display:none}
-#art svg{position:absolute;left:1.6rem;top:1.6rem;width:3.2rem;height:3.2rem}
-#mtitle{position:absolute;left:9.2rem;right:1.3rem;top:3rem;font-size:1.95rem;font-weight:bold;line-height:2.3rem;max-height:2.3rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-#martist{position:absolute;left:9.2rem;right:1.3rem;top:5.6rem;font-size:1.6rem;font-weight:bold;color:#c9d4de;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#mapp{position:absolute;left:9.2rem;right:1.3rem;top:7.8rem;font-size:1.3rem;color:#9fb0c2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#mprog{position:absolute;left:1.3rem;right:1.3rem;top:10.5rem;height:.8rem}
-#mtime{display:none}
-#mctl{position:absolute;left:1.3rem;right:1.3rem;bottom:.6rem;height:3.6rem}
-.cb{position:absolute;top:0;height:3.6rem;border-radius:1.8rem;background:#26384a;border:2px solid #4a5d72;text-align:center}
-.cb svg{width:2.3rem;height:2.3rem;margin-top:.45rem;fill:#ffffff}
-#bprev{left:0;width:8.4rem}#bplay{left:50%;margin-left:-5.6rem;width:11.2rem;background:#4fd8f0;border-color:#4fd8f0}#bplay svg{fill:#00141a}#bnext{right:0;width:8.4rem}
-.cb.dn{background:#3b5168}#bplay.dn{background:#2aa3b8}
-
-/* cartao do Claude: sessao (5h) e semanal */
-#clsrc{position:absolute;right:1.3rem;top:1.1rem;font-size:1.2rem;font-weight:bold;color:#9fb0c2;white-space:nowrap}
-.cq{position:absolute;left:1.3rem;right:1.3rem;height:10rem}
-#cq0{top:3.4rem}#cq1{top:13.4rem}
-.cq .k{position:absolute;left:0;top:0;font-size:1.9rem;font-weight:bold;color:#ffffff}
-.cq .v{position:absolute;right:0;top:-.5rem;font-size:2.9rem;font-weight:bold;color:#ffffff}
-.cq .bar{position:absolute;left:0;right:0;top:3.2rem;height:1.6rem;border-radius:.8rem}
-.cq .bar i{border-radius:.8rem;background:#b18cff}
-.cq .r{position:absolute;left:0;right:0;top:5.4rem;font-size:1.45rem;font-weight:bold;color:#c4a8ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#clchart{display:none}
-
-.key{position:absolute;background:#18222e;border:2px solid #3b4d61;border-radius:1rem;text-align:center;overflow:hidden}
-.key .ic{position:absolute;left:50%;top:20%;width:4.2rem;height:4.2rem;margin-left:-2.1rem}
-.key .ic svg{width:100%;height:100%}
-.key .tx{position:absolute;left:.3rem;right:.3rem;bottom:.7rem;font-size:1.4rem;font-weight:bold;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.key .st{position:absolute;left:0;top:0;right:0;height:.6rem}
-.key.dn{background:#2b3a4b;border-color:#ffffff}
-.key.on{border-color:#ff4d4d;background:#4a1418}
-
-#off{position:absolute;left:0;right:0;top:4.4rem;bottom:0;background:rgba(3,5,7,.9);display:none;text-align:center;z-index:6}
-#off .big{margin-top:12rem;font-size:3rem;font-weight:bold;color:#ffffff}
-#off .sm{margin-top:1rem;font-size:1.6rem;color:#c9d4de;line-height:2.4rem}
-#bwake{display:none;margin:2.6rem auto 0;width:22rem;height:6.4rem;line-height:6.2rem;border-radius:1.2rem;background:#4fd8f0;border:2px solid #4fd8f0;font-size:2.2rem;font-weight:bold;color:#00141a}
+/* ---- PC desligado */
+#off{position:absolute;left:0;right:0;top:4.4rem;bottom:0;background:rgba(3,6,10,.95);display:none;text-align:center;z-index:6}
+#off .big{margin-top:11rem;font-size:2.8rem;font-weight:bold;letter-spacing:.2rem;color:#ffffff;text-transform:uppercase;text-shadow:0 0 1.4rem rgba(79,216,240,.6)}
+#off .sm{margin-top:1.2rem;font-size:1.5rem;color:#9fdcec;line-height:2.4rem}
+#bwake{display:none;margin:2.6rem auto 0;width:24rem;height:5.8rem;line-height:5.6rem;border-radius:2.9rem;font-size:2rem;font-weight:bold;letter-spacing:.24rem;color:#00141a;text-transform:uppercase;
+  background:-webkit-linear-gradient(top,#7ce6f6,#2fbfdc);border:1px solid #4fd8f0;-webkit-box-shadow:0 0 1.8rem rgba(79,216,240,.55)}
 #bwake.dn{opacity:.7}
 
-#ask{position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.94);display:none;z-index:8}
-#askbox{position:absolute;left:6rem;right:6rem;top:3rem;bottom:3rem;background:#161f2a;border:3px solid #b18cff;border-radius:1.2rem;padding:1.6rem 2rem}
-#askh{font-size:1.4rem;letter-spacing:.15rem;color:#c4a8ff;font-weight:bold;text-transform:uppercase}
-#asktool{font-size:2.6rem;font-weight:bold;margin-top:.6rem}
-#askdet.big{font-family:"Roboto","Droid Sans",Arial,sans-serif;font-size:4rem;font-weight:bold;text-align:center;line-height:4.6rem;padding-top:5.4rem;color:#4fd8f0;text-transform:capitalize}
-#askcwd{font-size:1.3rem;color:#b8c4d0;margin-top:.3rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#askdet{position:absolute;left:2rem;right:2rem;top:10.4rem;bottom:9.4rem;background:#000000;border:2px solid #34465a;border-radius:.7rem;padding:1rem;font-family:"Droid Sans Mono",monospace;font-size:1.5rem;line-height:2rem;color:#ffffff;overflow:hidden;word-wrap:break-word;white-space:pre-wrap}
-#askleft{position:absolute;right:2rem;top:1.8rem;font-size:1.5rem;font-weight:bold;color:#ffffff}
-.ab{position:absolute;bottom:1.8rem;height:6rem;width:44%;border-radius:1rem;text-align:center;line-height:5.6rem;font-size:2.3rem;font-weight:bold}
-#adeny{left:2rem;background:#5a1a1f;color:#ffb3b0;border:2px solid #ff5a55}
-#aallow{right:2rem;background:#164d2c;color:#b4ffcf;border:2px solid #3cff8a}
+/* ---- pedido de permissao: pergunta simples + Permitir/Negar grandes */
+#ask{position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.86);display:none;z-index:8}
+#askbox{position:absolute;left:7rem;right:7rem;top:3rem;bottom:3rem;border:1px solid rgba(255,194,51,.5);border-radius:1.2rem;overflow:hidden;
+  background:#141a22}
+#askbox:before,#askbox:after{content:'';position:absolute;width:2.2rem;height:2.2rem;border-color:#ffc233;border-style:solid;z-index:2}
+#askbox:before{left:0;top:0;border-width:2px 0 0 2px;border-top-left-radius:1.2rem}
+#askbox:after{right:0;bottom:0;border-width:0 2px 2px 0;border-bottom-right-radius:1.2rem}
+#asktime{position:absolute;left:0;top:0;height:.4rem;background:#ffc233;width:100%}
+#askwho{position:absolute;left:2.4rem;top:2rem;font-size:1.25rem;font-weight:bold;letter-spacing:.28rem;color:#ffc233;text-transform:uppercase}
+#askleft{position:absolute;right:2.4rem;top:1.5rem;font-size:1.4rem;font-weight:bold;color:#ffc233;padding:.3rem 1rem;border:1px solid rgba(255,194,51,.6);border-radius:1.2rem}
+#askq{position:absolute;left:2.4rem;right:2.4rem;top:5rem;font-size:2.5rem;font-weight:bold;color:#ffffff;line-height:3.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#askalvo{position:absolute;left:2.4rem;right:2.4rem;top:9.4rem;bottom:11.4rem;background:#0a1018;border:1px solid rgba(79,216,240,.35);border-radius:.8rem;padding:1rem 1.4rem;font-size:3rem;font-weight:bold;color:#4fd8f0;line-height:3.7rem;overflow:hidden;word-wrap:break-word}
+#askalvo.long{font-size:2rem;line-height:2.6rem}
+#askbox.det #askalvo{bottom:16.6rem}
+#askdet{position:absolute;left:2.4rem;right:2.4rem;bottom:10.8rem;height:4.6rem;font-family:"Droid Sans Mono",monospace;font-size:1.3rem;line-height:2rem;color:#9fb6c8;overflow:hidden;white-space:pre-wrap;word-wrap:break-word}
+#askmore{position:absolute;right:2.4rem;top:5.6rem;font-size:1.2rem;font-weight:bold;color:#c3d3e0}
+.ab{position:absolute;bottom:1.8rem;height:6.4rem;width:46%;border-radius:3.2rem;text-align:center;line-height:6.2rem;font-size:2.2rem;font-weight:bold;letter-spacing:.24rem;text-transform:uppercase}
+#adeny{left:2.4rem;background:rgba(255,90,85,.08);color:#ffb3b0;border:1px solid #ff5a55}
+#aallow{right:2.4rem;color:#00180b;border:1px solid #3cff8a;background:-webkit-linear-gradient(top,#8affb8,#2ed470);-webkit-box-shadow:0 0 1.6rem rgba(60,255,138,.5)}
 .ab.dn{opacity:.6}
 
-#toast{position:absolute;left:50%;bottom:2rem;width:36rem;margin-left:-18rem;background:#ffffff;color:#030507;border-radius:2.4rem;padding:1.1rem 1.6rem;font-size:1.7rem;font-weight:bold;text-align:center;display:none;z-index:9}
+#toast{position:absolute;left:50%;bottom:2rem;width:36rem;margin-left:-18rem;border-radius:2.4rem;padding:1.1rem 1.6rem;font-size:1.6rem;font-weight:bold;letter-spacing:.08rem;text-align:center;display:none;z-index:9;
+  color:#ffffff;background:rgba(8,16,24,.96);border:1px solid #4fd8f0;-webkit-box-shadow:0 0 1.6rem rgba(79,216,240,.45)}
 </style>
 </head>
 <body>
@@ -222,18 +242,13 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
   </div>
 
   <div class="page" id="p4">
-    <div id="jorbw" class="card">
+    <div id="jcard" class="card">
+      <div id="jchips"><b id="jmodel">Haiku</b><b id="jgame" style="display:none">Modo jogo</b></div>
       <canvas id="jorb"></canvas>
       <div id="jst">Jarvis</div>
       <div id="jdet">toque em Falar</div>
+      <div id="jtalk"><svg viewBox="0 0 24 24"><path fill="#00141a" id="jtalkic" d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3zm-7 9h2a5 5 0 0 0 10 0h2a7 7 0 0 1-6 6.9V21h-2v-3.1A7 7 0 0 1 5 11z"/></svg><span id="jtalktx">Falar</span></div>
     </div>
-    <div id="jconv" class="card">
-      <div class="h">Conversa</div>
-      <div id="jchips"><b id="jgame" style="display:none;border-color:#ffc233;color:#ffc233">Modo jogo</b><b id="jmodel">Haiku</b><b id="jphase">Fase 1 · simulação</b></div>
-      <div id="jlines"><div class="jempty">Toque em <b>Falar</b> e fale no microfone do PC.<br>Pergunte qualquer coisa: contas, clima, notícias, ideias…</div></div>
-    </div>
-    <div id="jtalk"><svg viewBox="0 0 24 24"><path fill="#00141a" id="jtalkic" d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3zm-7 9h2a5 5 0 0 0 10 0h2a7 7 0 0 1-6 6.9V21h-2v-3.1A7 7 0 0 1 5 11z"/></svg><span id="jtalktx">Falar</span></div>
-    <div id="jclap" class="jsw"><div class="k">5 PALMAS</div><div class="v" id="jclapv">Desligado</div></div>
   </div>
 </div></div>
 
@@ -241,11 +256,13 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 
 <div id="ask">
   <div id="askbox">
-    <div id="askh">Claude Code pede permissão</div>
+    <div id="asktime"></div>
+    <div id="askwho">Jarvis</div>
     <div id="askleft"></div>
-    <div id="asktool">—</div>
-    <div id="askcwd"></div>
+    <div id="askq">quer fazer algo</div>
+    <div id="askalvo"></div>
     <div id="askdet"></div>
+    <div id="askmore"></div>
     <div class="ab" id="adeny">Negar</div>
     <div class="ab" id="aallow">Permitir</div>
   </div>
@@ -387,13 +404,16 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     if (page !== 1) return;
     var ctx = c.getContext('2d'), w = c.width, ht = c.height;
     ctx.clearRect(0, 0, w, ht);
-    ctx.fillStyle = '#0b1219'; ctx.fillRect(0, 0, w, ht);
+    ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(0, 0, w, ht);
+    ctx.strokeStyle = 'rgba(79,216,240,0.10)'; ctx.lineWidth = 1;   /* linhas guia de 25% */
+    for (var q = 1; q < 4; q++) { var gy = Math.round(ht * q / 4) + 0.5; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke(); }
     if (h.length < 2) return;
     var step = w / (HIST - 1), x0 = w - (h.length - 1) * step;
     ctx.beginPath(); ctx.moveTo(x0, ht);
     for (var i = 0; i < h.length; i++) ctx.lineTo(x0 + i * step, ht - 2 - (h[i] / 100) * (ht - 4));
     ctx.lineTo(w, ht); ctx.closePath();
-    ctx.globalAlpha = 0.25; ctx.fillStyle = color; ctx.fill(); ctx.globalAlpha = 1;
+    var gr = ctx.createLinearGradient(0, 0, 0, ht); gr.addColorStop(0, color); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = 0.35; ctx.fillStyle = gr; ctx.fill(); ctx.globalAlpha = 1;
     ctx.beginPath();
     for (var j = 0; j < h.length; j++) { var y = ht - 2 - (h[j] / 100) * (ht - 4); if (j) ctx.lineTo(x0 + j * step, y); else ctx.moveTo(x0, y); }
     ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
@@ -413,7 +433,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
       d = new Date(); h = d.getHours(); m = d.getMinutes(); wd = d.getDay(); dd = d.getDate(); mo = d.getMonth();
     }
     setText($('clock'), (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m);
-    setText($('date'), DIAS[wd] + ', ' + dd + ' ' + MESES[mo]);
+    setText($('date'), (DIAS[wd] + ', ' + dd + ' ' + MESES[mo]).toUpperCase()); /* maiusculas no texto: o text-transform desalinha no WebKit antigo */
     var alive = linkUp && (Date.now() - lastMsg < 7000);
     $('dot').className = alive ? 'on' : '';
     setText($('linktx'), alive ? (hasBridge ? Bridge.mode().toUpperCase() : 'OK') : 'Sem PC');
@@ -423,6 +443,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     if (askCur) {
       var left = Math.round((askCur.expires - Date.now()) / 1000);
       setText($('askleft'), left > 0 ? left + ' s' : '');
+      $('asktime').style.width = Math.max(0, Math.min(100, (askCur.expires - Date.now()) / (askCur.total || 1) * 100)) + '%';
       if (left <= -2) closeAsk(askCur.id);
     }
   }
@@ -570,7 +591,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
   /* ---------- Claude Code ---------- */
   function onClaude(c) {
     claude = c;
-    setText($('clsrc'), c.real ? 'limite do plano' : 'tokens deste PC');
+    setText($('clsrc'), c.real ? 'LIMITE DO PLANO' : 'TOKENS DESTE PC');
     renderClaudeTime();
   }
   /* Uma medicao: percentual real (com barra) se houver; senao, os tokens contados neste PC. */
@@ -697,20 +718,17 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
       setText($('jst'), s[0]);
       var dica = s[1];
       if (!dica && m.state === 'parado') {
-        dica = (m.claps && !m.game) ? 'bata 5 palmas ou toque em Falar' : 'toque em Falar';
+        dica = (m.claps && !m.game) ? 'bata 3 palmas ou toque em Falar' : 'toque em Falar';
       }
       setText($('jdet'), m.detail || dica);
       $('jst').style.color = 'rgb(' + s[2].join(',') + ')';
       if (m.model) setText($('jmodel'), m.model.charAt(0).toUpperCase() + m.model.slice(1));
-      if (m.phase) setText($('jphase'), m.phase === 1 ? 'Fase 1 · simulação' : (m.phase === 2 ? 'Fase 2 · repete o que ouviu' : 'Claude Code'));
       $('jtalk').className = jbusy() ? 'on' : '';
       setText($('jtalktx'), jbusy() ? 'Parar' : 'Falar');
       J.claps = !!m.claps;
-      $('jclap').className = 'jsw' + (J.claps ? ' on' : '');
-      setText($('jclapv'), J.claps ? (m.game ? 'Pausado' : 'Ligado') : 'Desligado');
-      $('jclapv').style.color = (J.claps && m.game) ? '#ffc233' : '';
       $('jgame').style.display = m.game ? 'inline-block' : 'none';
       if (m.state !== 'ouvindo') J.level = 0;
+      if (J.animOn) { clearTimeout(J.timer); orbLoop(); }
     } else if (m.ev === 'history') {
       if (!J.conv.length && m.items && m.items.length) { J.conv = m.items.slice(-3); renderConv(); }
     } else if (m.ev === 'clap') {
@@ -741,38 +759,54 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
       if (c.you) html += '<div class="jx"><div class="who">VOCÊ</div><div class="you">' + esc(c.you) + '</div></div>';
       if (c.jar) html += '<div class="jx"><div class="who">JARVIS</div><div class="jar">' + esc(c.jar) + '</div></div>';
     }
-    var box = $('jlines'); box.innerHTML = html;
+    var box = $('jlines'); if (!box) return; /* a aba Jarvis nao mostra mais a conversa */
+    box.innerHTML = html;
     box.scrollTop = box.scrollHeight; /* mostra sempre o fim da conversa */
     while (box.scrollHeight > box.clientHeight + 4 && box.firstChild) box.removeChild(box.firstChild);
   }
   /* reator: anima so com a aba visivel (~14 qps); parado = respiracao lenta */
+  /* O tablet tem 1 nucleo: a 14 qps o reator gastava ~70% da CPU. Em espera ele "respira" a 2 qps
+     (quase nada); so anima rapido enquanto o Jarvis ouve, pensa ou fala. */
   function jarvisAnim(on) {
-    if (on && !J.timer) { J.timer = setInterval(drawOrb, 70); drawOrb(); }
-    else if (!on && J.timer) { clearInterval(J.timer); J.timer = null; }
+    J.animOn = on;
+    if (on && !J.timer) orbLoop();
+    else if (!on && J.timer) { clearTimeout(J.timer); J.timer = null; }
+  }
+  function orbLoop() {
+    J.timer = null;
+    if (!J.animOn) return;
+    drawOrb();
+    J.timer = setTimeout(orbLoop, jbusy() ? 90 : 500);
   }
   function drawOrb() {
     var c = $('jorb'), ctx = c.getContext('2d'), w = c.width, h = c.height;
     if (!w || !h) return;
     var cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2, t = (Date.now() - J.t0) / 1000;
     var col = (JSTATE[J.state] || JSTATE.parado)[2], rgb = col.join(',');
-    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#0a131d'; ctx.fillRect(0, 0, w, h); /* fundo opaco: o WebView nao precisa misturar com o cartao */
     var pulse = 0.5 + 0.5 * Math.sin(t * 1.6);
     var core = R * 0.34;
     if (J.state === 'ouvindo') core = R * (0.30 + 0.16 * J.level);
     else if (J.state === 'falando') core = R * (0.32 + 0.05 * Math.abs(Math.sin(t * 9)));
     else core = R * (0.32 + 0.02 * pulse);
-    /* brilho */
-    var g = ctx.createRadialGradient(cx, cy, core * 0.2, cx, cy, R * 0.98);
-    g.addColorStop(0, 'rgba(' + rgb + ',0.55)');
-    g.addColorStop(0.45, 'rgba(' + rgb + ',0.14)');
-    g.addColorStop(1, 'rgba(' + rgb + ',0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R * 0.98, 0, 6.2832); ctx.fill();
+    /* brilho: desenhado uma vez por cor e reaproveitado (o degrade radial e o que mais pesa no tablet) */
+    var key = rgb + '|' + w + 'x' + h;
+    if (J.glowKey !== key) {
+      var gc = document.createElement('canvas'); gc.width = w; gc.height = h;
+      var gx = gc.getContext('2d'), g = gx.createRadialGradient(cx, cy, R * 0.07, cx, cy, R * 0.98);
+      g.addColorStop(0, 'rgba(' + rgb + ',0.55)');
+      g.addColorStop(0.45, 'rgba(' + rgb + ',0.14)');
+      g.addColorStop(1, 'rgba(' + rgb + ',0)');
+      gx.fillStyle = g; gx.beginPath(); gx.arc(cx, cy, R * 0.98, 0, 6.2832); gx.fill();
+      J.glow = gc; J.glowKey = key;
+    }
+    ctx.drawImage(J.glow, 0, 0);
     /* nucleo */
     ctx.fillStyle = 'rgba(' + rgb + ',0.9)'; ctx.beginPath(); ctx.arc(cx, cy, core * 0.55, 0, 6.2832); ctx.fill();
     ctx.lineWidth = Math.max(2, R * 0.025); ctx.strokeStyle = 'rgba(' + rgb + ',1)';
     ctx.beginPath(); ctx.arc(cx, cy, core, 0, 6.2832); ctx.stroke();
     /* aneis: giram quando pensa; segmentados como um reator */
-    var spin = (J.state === 'pensando' || J.state === 'transcrevendo') ? t * 2.4 : t * 0.25;
+    var spin = (J.state === 'pensando' || J.state === 'transcrevendo') ? t * 2.4 : (jbusy() ? t * 0.6 : 0); /* parado: aneis fixos */
     for (var k = 0; k < 2; k++) {
       var rr = R * (0.62 + k * 0.2), segs = 6 + k * 4, gap = 0.18;
       ctx.lineWidth = Math.max(2, R * (0.045 - k * 0.015));
@@ -784,18 +818,22 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     }
   }
   tap($('jtalk'), function () { send({ t: 'jarvis', cmd: jbusy() ? 'stop' : 'listen' }); });
-  tap($('jclap'), function () { send({ t: 'jarvis', cmd: 'claps', on: !J.claps }); });
 
   /* ---------- aprovacoes do Claude Code ---------- */
-  function onApproval(a) { a.expires = Date.now() + (a.timeout || 100) * 1000; askQueue.push(a); if (!askCur) nextAsk(); }
+  function onApproval(a) { a.total = (a.timeout || 100) * 1000; a.expires = Date.now() + a.total; askQueue.push(a); if (!askCur) nextAsk(); }
   function nextAsk() {
     askCur = askQueue.shift() || null;
     if (!askCur) { $('ask').style.display = 'none'; return; }
-    setText($('asktool'), askCur.tool || 'Ferramenta');
-    setText($('askcwd'), askCur.cwd || '');
-    setText($('askdet'), askCur.detail || '');
-    setText($('askh'), (askCur.agent || 'Claude Code') + ' pede permissão' + (askQueue.length ? ' (+' + askQueue.length + ')' : ''));
-    $('askdet').className = askCur.agent === 'Jarvis' ? 'big' : ''; /* pedido do Jarvis: o alvo em letra grande */
+    var who = askCur.agent || 'Claude Code', alvo = askCur.alvo || askCur.detail || '';
+    setText($('askwho'), who + ' pede permissão');
+    setText($('askq'), (who === 'Jarvis' ? 'O Jarvis' : 'O ' + who) + ' quer ' + (askCur.acao || 'usar ' + (askCur.tool || 'uma ferramenta')) + ':');
+    setText($('askalvo'), alvo);
+    $('askalvo').className = alvo.length > 40 ? 'long' : '';
+    /* o comando/conteudo tecnico so aparece se for diferente do que ja esta escrito acima */
+    var det = askCur.detail && askCur.detail !== alvo ? askCur.detail : '';
+    setText($('askdet'), det);
+    $('askbox').className = det ? 'det' : '';
+    setText($('askmore'), askQueue.length ? '+' + askQueue.length + ' pedido(s) esperando' : '');
     $('ask').style.display = 'block';
   }
   function closeAsk(id) {
@@ -839,7 +877,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     $('bwake').style.display = m.known && m.st !== 'idle' ? 'block' : 'none';
     if (m.st === 'idle') { if (OFF0) { $('offbig').innerHTML = OFF0[0]; $('offtx').innerHTML = OFF0[1]; } return; }
     var semWifi = 'O tablet está sem Wi-Fi: conecte-o à mesma rede do PC para ligar pela rede.';
-    if (m.st === 'listen') offText('PC desligado', m.wifi ? 'Bata 5 palmas para ligar o computador.' : semWifi);
+    if (m.st === 'listen') offText('PC desligado', m.wifi ? 'Bata 3 palmas para ligar o computador.' : semWifi);
     else if (m.st === 'clap') {
       offText('PC desligado', 'palmas: ' + m.x.n + ' de ' + m.x.need);
       guardT = setTimeout(function () { onGuard({ st: 'listen', wifi: m.wifi, known: m.known }); }, 3500);

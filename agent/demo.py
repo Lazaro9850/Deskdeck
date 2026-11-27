@@ -182,6 +182,11 @@ class FakeJarvis:
     def stop(self):
         pass
 
+    def running(self):  # o agente fecha o Jarvis ao sair da aba; o de demonstracao nao e um processo
+        return False
+
+    last_state = {"ev": "state", "state": "parado"}
+
     def _scene(self):
         self.busy.set()
         you, jar = CONVERSAS[self.n % len(CONVERSAS)]
